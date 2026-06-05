@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Studio | Where Great Resumes Begin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <body>
+    <div id="onboarding-overlay" class="overlay">
+      <div class="overlay-modal" style="position: relative">
+        <button
+          onclick="closeStartMenu()"
+          title="Close and keep editing"
+          class="modal-close-x"
+        >
+          ×
+        </button>
+
+        <h2>Start Menu</h2>
+        <p>Welcome! How would you like to begin building your resume?</p>
+        <div class="overlay-buttons">
+          <button
+            class="btn btn-success"
+            style="padding: 12px; font-size: 1rem"
+            onclick="dismissOnboarding('demo')"
+          >
+            📄 Load Demo CV <br /><span
+              style="font-size: 0.8rem; font-weight: normal; opacity: 0.9"
+              >(See a filled professional example)</span
+            >
+          </button>
+          <button
+            class="btn btn-outline"
+            style="
+              padding: 12px;
+              font-size: 1rem;
+              border-color: var(--primary);
+              color: var(--primary);
+            "
+            onclick="dismissOnboarding('tutorial')"
+          >
+            🎓 Interactive Tutorial <br /><span
+              style="font-size: 0.8rem; font-weight: normal; opacity: 0.8"
+              >(Take a quick guided tour of the tools)</span
+            >
+          </button>
+          <button
+            class="btn btn-outline"
+            style="padding: 12px; font-size: 1rem"
+            onclick="dismissOnboarding('blank')"
+          >
+            📝 Start Blank Resume <br /><span
+              style="font-size: 0.8rem; font-weight: normal; opacity: 0.8"
+              >(Start typing your own data immediately)</span
+            >
+          </button>
+        </div>
+        <p
+          style="
+            margin-top: 18px;
+            margin-bottom: 0;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+          "
+        >
+          Or press × above to go back to what you were doing.
+        </p>
+      </div>
+    </div>
+
+    <div id="ats-overlay" class="overlay">
+      <div class="overlay-modal" id="ats-modal">
+        <button class="modal-close-x" onclick="closeATSModal()">×</button>
+        <h2>
+          🎯 AI ATS Checker
+          <span class="beta-badge" style="font-size: 0.65rem">BETA</span>
+        </h2>
+        <p>
+          Compare your resume against a Job Description to see how an ATS system
+          will score you.
+        </p>
+        <textarea
+          id="ats-jd"
+          placeholder="Paste the Job Description here... (Leave blank for a general SDE review for Indian market)"
+        ></textarea>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <button class="btn btn-outline" onclick="closeATSModal()">
+            Close
+          </button>
+          <button class="btn btn-success" id="ats-btn" onclick="runATSCheck()">
+            Analyze Resume
+          </button>
+        </div>
+        <div id="ats-results"></div>
+      </div>
+    </div>
+
+    <div id="tutorial-spotlight" class="spotlight-cutout"></div>
+    <div id="tutorial-tooltip" class="tutorial-tooltip"></div>
+    <div id="overflow-indicator">⚠️ Content exceeds one A4 page</div>
+
+    <div class="app-container">
+      <div class="editor-panel">
+        <div class="editor-header">
+          <div
+            class="editor-header-title"
+            style="
+              display: flex;
+              align-items: baseline;
+              gap: 12px;
+              justify-content: left;
+            "
+          >
+            <h2
+              style="
+                font-family: system-ui, sans-serif;
+                font-size: 1.45rem;
+                margin: 0;
+                display: flex;
+                align-items: center;
+                letter-spacing: -0.5px;
+              "
+            >
+              <span style="font-weight: 800; color: var(--text-main)"
+                >Resume</span
+              >
+              <span style="font-weight: 800; color: var(--primary)"
+                >Studio</span
+              >
+            </h2>
+            <span
+              style="
+                font-size: 0.8rem;
+                color: var(--text-muted);
+                font-style: italic;
+                border-left: 2px solid var(--border);
+                padding-left: 12px;
+                padding-bottom: 2px;
+              "
+              >Where Great Resumes Begin</span
+            >
+          </div>
+          <div class="header-controls">
+            <div class="btn-group" id="tour-design">
+              <button
+                class="btn btn-outline btn-small"
+                onclick="setTab('settings')"
+                style="border: none"
+              >
+                ⚙️ Settings
+              </button>
+              <select
+                class="template-select"
+                onchange="changeTemplate(this.value)"
+                style="border: none"
+              >
+                <option value="two-column">Two Column</option>
+                <option value="single-column">One Column</option>
+              </select>
+            </div>
+
+            <div class="btn-group" id="tour-history">
+              <button
+                id="btn-undo"
+                class="btn btn-outline btn-small"
+                style="border: none"
+                onclick="undo()"
+                title="Undo (Ctrl+Z)"
+                disabled
+              >
+                ↩ Undo
+              </button>
+              <button
+                id="btn-redo"
+                class="btn btn-outline btn-small"
+                style="border: none"
+                onclick="redo()"
+                title="Redo (Ctrl+Y)"
+                disabled
+              >
+                ↪ Redo
+              </button>
+            </div>
+
+            <div class="btn-group" id="tour-data">
+              <button
+                class="btn btn-outline btn-small"
+                style="border: none"
+                onclick="exportJSON()"
+                title="Download JSON Backup"
+              >
+                💾 Export
+              </button>
+              <button
+                class="btn btn-outline btn-small"
+                style="border: none"
+                onclick="triggerImport()"
+                title="Upload JSON Backup"
+              >
+                📂 Import
+              </button>
+              <input
+                type="file"
+                id="import-file"
+                accept=".json"
+                style="display: none"
+                onchange="handleImport(event)"
+              />
+            </div>
+
+            <div class="btn-group">
+              <button
+                class="btn btn-outline btn-small"
+                style="border: none"
+                onclick="openStartMenu()"
+              >
+                🪄 Menu
+              </button>
+              <button
+                id="tour-ats"
+                class="btn btn-outline btn-small"
+                onclick="openATSModal()"
+                style="border: none; color: #a855f7; font-weight: bold"
+              >
+                🎯 ATS Check <span class="beta-badge">BETA</span>
+              </button>
+            </div>
+
+            <div class="btn-group" id="tour-output">
+              <button
+                id="tour-clear"
+                class="btn btn-danger btn-small"
+                style="border: none"
+                onclick="resetData(true)"
+              >
+                Clear
+              </button>
+              <button
+                id="tour-print"
+                class="btn btn-primary btn-small"
+                style="border: none"
+                onclick="sendResumeLeadAndPrint()"
+              >
+                Print PDF
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="editor-nav" id="editor-nav"></div>
+        <div class="editor-content" id="editor-form"></div>
+      </div>
+
+      <div class="preview-panel">
+        <div class="resume-page" id="resume-preview"></div>
+      </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
