@@ -95,7 +95,7 @@ const demoData = {
     lineHeight: 1.5,
     pagePadding: 10,
     font: "Arial",
-    groqApiKey: "",
+    aiApiKey: "",
   },
   personal: {
     name: "PREET PATEL",
@@ -122,6 +122,14 @@ const demoData = {
     ],
   },
   sections: [
+    {
+      id: "summary",
+      title: "Profile Summary",
+      type: "text",
+      column: "main",
+      value:
+        "3rd-year B.Tech CSE student at Parul Institute of Technology (9.43 CGPA), proficient in Java, JavaScript, and the MERN stack. Built and deployed full-stack projects including RentalHub (a rental management system) and browser-based JavaScript games, with live demos hosted on GitHub Pages and Vercel. Active competitive programmer with 400+ LeetCode problems solved (Rating: 1723), and a finalist at SIH 2025 and the ODOO × GCET Hackathon 2025.",
+    },
     {
       id: "education",
       title: "Education",
@@ -253,10 +261,8 @@ const demoData = {
     },
   ],
 };
-
 let resumeData =
   JSON.parse(localStorage.getItem("preetResumeStateV33")) || blankData;
-
 if (
   resumeData.settings.groqApiKey !== undefined &&
   !resumeData.settings.aiApiKey
@@ -269,15 +275,22 @@ if (
 ) {
   resumeData.settings.aiApiKey = resumeData.settings.geminiApiKey;
 }
-
 delete resumeData.settings.groqApiKey;
 delete resumeData.settings.geminiApiKey;
-delete resumeData.settings.aiProvider; // Removing aiProvider entirely as requested
+delete resumeData.settings.aiProvider;
 
 if (resumeData.settings.aiApiKey === undefined)
   resumeData.settings.aiApiKey = "";
 if (!resumeData.settings.font) resumeData.settings.font = "Calibri";
-
+if (!resumeData.sections.find((s) => s.id === "summary")) {
+  resumeData.sections.unshift({
+    id: "summary",
+    title: "Profile Summary",
+    type: "text",
+    column: "main",
+    value: "",
+  });
+}
 const fontMap = {
   Calibri: "'Calibri', 'Helvetica Neue', Helvetica, Arial, sans-serif",
   Arial: "Arial, 'Helvetica Neue', Helvetica, sans-serif",
@@ -360,7 +373,6 @@ function updateColorPicker(val) {
   if (ci) ci.value = val;
   saveData();
 }
-
 function exportJSON() {
   if (!confirm("Export your current resume data as a JSON backup file?"))
     return;
@@ -393,7 +405,6 @@ function handleImport(event) {
   reader.readAsText(file);
   event.target.value = "";
 }
-
 const MAX_HISTORY = 50;
 let historyStack = [],
   redoStack = [],
@@ -440,6 +451,9 @@ function updateUndoRedoBtns() {
   if (u) u.disabled = historyStack.length < 2;
   if (r) r.disabled = redoStack.length === 0;
 }
+document.addEventListener("dragend", () => {
+  draggedItem = null;
+});
 document.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
     e.preventDefault();
@@ -453,21 +467,16 @@ document.addEventListener("keydown", (e) => {
     redo();
   }
 });
-
-// Paste your deployed Apps Script Web App URL here.
 const GOOGLE_SHEET_WEB_APP_URL =
   "https://script.google.com/macros/s/AKfycbzDkqnNGLtyyRQ9mrHTv1HkX1Czl05nFWcuPqQCiV0l5rrtrQ7xlHX28gAFrPYA8pB2/exec";
 
 function sendResumeLeadAndPrint() {
   try {
-    // Send only the basic fields you asked for.
     const lead = {
       name: (resumeData?.personal?.name || "").trim(),
       email: (resumeData?.personal?.email || "").trim(),
       phone: (resumeData?.personal?.phone || "").trim(),
     };
-
-    // Submit through a hidden iframe so the browser stays on the page.
     const frameId = "gs_hidden_sink";
     let frame = document.getElementById(frameId);
     if (!frame) {
@@ -494,7 +503,6 @@ function sendResumeLeadAndPrint() {
 
     document.body.appendChild(form);
     form.submit();
-
     setTimeout(() => {
       form.remove();
       window.print();
@@ -504,16 +512,17 @@ function sendResumeLeadAndPrint() {
     window.print();
   }
 }
-
-// ─── ENGINE ───────────────────────────────────────────────────────────────
 function saveData() {
   localStorage.setItem("preetResumeStateV33", JSON.stringify(resumeData));
   applySettings();
   renderPreview();
+  renderNavigation();
   recordHistory();
 }
 function loadDemoData() {
+  const savedKey = (resumeData.settings && resumeData.settings.aiApiKey) || "";
   resumeData = JSON.parse(JSON.stringify(demoData));
+  resumeData.settings.aiApiKey = savedKey;
   clearTimeout(historyTimer);
   localStorage.setItem("preetResumeStateV33", JSON.stringify(resumeData));
   document.querySelector(".template-select").value = resumeData.template;
@@ -529,7 +538,10 @@ function loadDemoData() {
 }
 function resetData(forcePrompt = false) {
   if (forcePrompt || confirm("Wipe all data and start from a blank slate?")) {
+    const savedKey =
+      (resumeData.settings && resumeData.settings.aiApiKey) || "";
     resumeData = JSON.parse(JSON.stringify(blankData));
+    resumeData.settings.aiApiKey = savedKey;
     clearTimeout(historyTimer);
     localStorage.setItem("preetResumeStateV33", JSON.stringify(resumeData));
     document.querySelector(".template-select").value = resumeData.template;
@@ -550,6 +562,7 @@ function changeTemplate(val) {
   if (activeTab === "settings") renderEditor();
 }
 function updateState(path, value) {
+  if (/sections\.\d+\.title$/.test(path) && !String(value).trim()) return;
   const keys = path.split(".");
   let cur = resumeData;
   for (let i = 0; i < keys.length - 1; i++) cur = cur[keys[i]];
@@ -564,7 +577,6 @@ function updateState(path, value) {
   }
   saveData();
 }
-
 async function callAI(systemPrompt, userPrompt, jsonMode = false) {
   const apiKey = resumeData.settings.aiApiKey
     .replace(/[^\x20-\x7E]/g, "")
@@ -601,7 +613,6 @@ async function callAI(systemPrompt, userPrompt, jsonMode = false) {
   const data = await resp.json();
   return data.choices[0].message.content;
 }
-
 function openATSModal() {
   if (!resumeData.settings.aiApiKey) {
     alert(
@@ -625,8 +636,6 @@ async function runATSCheck() {
   btn.disabled = true;
   btn.innerText = "Analyzing... (5-15s)";
   resDiv.innerHTML = "";
-
-  // Build resume plain-text
   let rText = `Name: ${resumeData.personal.name}\nRole: ${resumeData.personal.role}\n`;
   rText += `Email: ${resumeData.personal.email} | Phone: ${resumeData.personal.phone}\n`;
   rText += `Links: ${(resumeData.personal.links || [])
@@ -740,7 +749,6 @@ Return ONLY a raw JSON object — no markdown, no backticks, no text before or a
     btn.innerText = "Analyze Resume";
   }
 }
-
 async function enhanceWithAI(path, elementId) {
   if (!resumeData.settings.aiApiKey) {
     alert("Please enter your AI API key in the Settings tab first.");
@@ -787,7 +795,118 @@ STRICT RULES:
     textarea.disabled = false;
   }
 }
+async function generateSummary(sIdx) {
+  if (!resumeData.settings.aiApiKey) {
+    alert("Please enter your Groq API key in the Settings tab first.");
+    setTab("settings");
+    return;
+  }
+  const textarea = document.getElementById("txt-" + sIdx);
+  if (!textarea) return;
+  const prev = textarea.value;
+  textarea.value = "✨ Generating your Profile Summary from resume data…";
+  textarea.disabled = true;
 
+  // Build rich context from the entire resume
+  const p = resumeData.personal;
+  let ctx = "";
+  if (p.name) ctx += "Name: " + p.name + "\n";
+  if (p.role) ctx += "Target Role: " + p.role + "\n";
+  const activeLinks = (p.links || []).filter((l) => l.url);
+  if (activeLinks.length)
+    ctx +=
+      "Profiles: " +
+      activeLinks.map((l) => l.name + " — " + l.url).join(", ") +
+      "\n";
+  ctx += "\n";
+
+  resumeData.sections.forEach((sec) => {
+    if (sec.id === "summary") return;
+    if (sec.type === "text" && !sec.value) return;
+    if (sec.type !== "text" && !(sec.items && sec.items.length)) return;
+
+    ctx += "=== " + sec.title + " ===\n";
+    if (sec.type === "text") {
+      ctx += sec.value + "\n";
+    } else {
+      (sec.items || []).forEach((item) => {
+        if (sec.type === "education") {
+          const dates = [item.startDate, item.endDate]
+            .filter(Boolean)
+            .join(" – ");
+          ctx +=
+            item.degree +
+            " at " +
+            item.school +
+            (dates ? " (" + dates + ")" : "");
+          if (item.gradeType !== "None" && item.gradeValue)
+            ctx += " | " + item.gradeType + ": " + item.gradeValue;
+          ctx += "\n";
+          if (item.description) ctx += item.description + "\n";
+        } else if (sec.type === "experience") {
+          ctx +=
+            (item.role || "") +
+            " at " +
+            (item.company || "") +
+            (item.date ? " (" + item.date + ")" : "") +
+            "\n";
+          if (item.description)
+            ctx += item.description.substring(0, 300) + "\n";
+        } else if (sec.type === "skills") {
+          ctx +=
+            (item.title || "") +
+            " " +
+            (item.skillsList || []).join(", ") +
+            "\n";
+        } else if (sec.type === "project" || sec.type === "complex") {
+          const sub = item.date || item.subtitle || "";
+          ctx += (item.title || "") + (sub ? " (" + sub + ")" : "") + "\n";
+          const desc = item.description || item.details || "";
+          if (desc) ctx += desc.substring(0, 250) + "\n";
+        } else if (sec.type === "simple") {
+          if (item.text) ctx += "• " + item.text + "\n";
+        }
+      });
+    }
+    ctx += "\n";
+  });
+
+  const systemPrompt = `You are a senior technical recruiter and resume writer at a top Indian tech company (Zoho, Flipkart, Razorpay, Amazon India, PhonePe). You specialise in writing Profile Summaries for B.Tech Computer Science students applying for SDE internships and campus placements in the Indian IT market.
+
+Your task: Write a 2–3 sentence Profile Summary using ONLY the information in the resume data below. Do not invent, assume, or add anything not explicitly present.
+
+STRUCTURE — follow this order exactly:
+• Sentence 1 — Identity: [Year of study] B.Tech CSE student at [Institution] with [CGPA only if ≥ 8.0 CGPA or ≥ 75%; omit grade entirely if weaker].
+• Sentence 2 — Technical depth: Name the strongest tech stack (languages, frameworks, tools) and reference 1–2 of the most impactful projects or experience. Be specific.
+• Sentence 3 — Differentiator (only if genuinely strong): competitive programming stats (LeetCode 300+, CodeChef 3★+, CF 1400+) OR a hackathon win/finalist OR a notable award. If the student's data is weak or absent, write exactly 2 sentences and stop.
+
+STRICT RULES:
+1. No first-person pronouns — no "I", "me", "my". Write impersonally.
+2. 2–3 sentences MAXIMUM. Target 50–70 words total.
+3. Zero filler words — never use: passionate, dynamic, hardworking, team player, result-driven, spearheaded, leveraged, synergized, motivated, enthusiastic, dedicated, aspiring.
+4. Preserve all technology names exactly as given — do not alter capitalisation (React, Node.js, MongoDB, Java, etc.).
+5. Output ONLY the summary paragraph. No labels, no preamble like "Here is your summary:", no markdown, no quotes around the output.`;
+
+  const userPrompt =
+    "Write a Profile Summary for this student.\n\nResume data:\n" + ctx;
+
+  try {
+    let result = await callAI(systemPrompt, userPrompt, false);
+    result = result
+      .trim()
+      .replace(/^[\`]{3}[a-z]*\n?/i, "")
+      .replace(/[\`]{3}$/i, "")
+      .replace(/^(profile summary|summary):?\s*/i, "")
+      .trim();
+    textarea.value = result;
+    updateState("sections." + sIdx + ".value", result);
+  } catch (err) {
+    alert("Summary generation failed:\n" + err.message);
+    textarea.value = prev;
+  } finally {
+    textarea.disabled = false;
+  }
+}
 function setTab(tabId) {
   activeTab = tabId;
   renderNavigation();
@@ -806,7 +925,6 @@ function renderNavigation() {
 function renderEditor() {
   const container = document.getElementById("editor-form");
   let html = `<div id="render-block-${Date.now()}" autocomplete="off">`;
-
   if (activeTab === "personal") {
     html += `<div class="section-card"><div class="section-header">Personal Information</div>${fmtGuideHTML}
             <div class="form-group"><label>Full Name</label><input type="text" placeholder="e.g. John Doe" data-path="personal.name" value="${escapeAttr(resumeData.personal.name)}"></div>
@@ -816,7 +934,7 @@ function renderEditor() {
             <div class="form-group"><label>Location</label><input type="text" placeholder="City, State, India" data-path="personal.location" value="${escapeAttr(resumeData.personal.location)}"></div>
             <div class="form-group"><label>Profile Links</label>`;
     resumeData.personal.links.forEach((link, lIdx) => {
-      html += `<div class="input-row"><input type="text" placeholder="Platform Name" data-path="personal.links.${lIdx}.name" value="${escapeAttr(link.name)}"><input type="text" placeholder="Profile URL" data-path="personal.links.${lIdx}.url" value="${escapeAttr(link.url)}"><button class="btn btn-danger btn-small" onclick="resumeData.personal.links.splice(${lIdx},1);saveData();renderEditor();">X</button></div>`;
+      html += `<div class="input-row" style="align-items:center;"><input type="text" placeholder="Platform Name" data-path="personal.links.${lIdx}.name" value="${escapeAttr(link.name)}" style="flex:1;min-width:80px;"><input type="text" placeholder="Profile URL" data-path="personal.links.${lIdx}.url" value="${escapeAttr(link.url)}" style="flex:2;min-width:0;"><div style="display:flex;gap:2px;flex-shrink:0;"><button class="btn btn-outline btn-small" style="padding:5px 8px;font-size:0.85rem;" onclick="moveLinkOrder(${lIdx},-1)" title="Move Up">▲</button><button class="btn btn-outline btn-small" style="padding:5px 8px;font-size:0.85rem;" onclick="moveLinkOrder(${lIdx},1)" title="Move Down">▼</button><button class="btn btn-danger btn-small" onclick="resumeData.personal.links.splice(${lIdx},1);saveData();renderEditor();">✕</button></div></div>`;
     });
     html += `<button class="btn btn-outline btn-small" onclick="resumeData.personal.links.push({name:'',url:''});saveData();renderEditor();">+ Add Link</button></div></div>`;
   } else if (activeTab === "settings") {
@@ -889,7 +1007,7 @@ function renderEditor() {
     if (resumeData.template === "single-column") {
       html += `<div class="seq-col-box"><div class="seq-title">Document Order (Top to Bottom)</div>`;
       resumeData.sections.forEach((sec) => {
-        html += `<div class="seq-item"><span>${formatText(sec.title)}</span><div style="display:flex;gap:5px;"><button class="btn btn-outline btn-small" onclick="moveSecLogical('${sec.id}',-1)">↑ Up</button><button class="btn btn-outline btn-small" onclick="moveSecLogical('${sec.id}',1)">↓ Down</button></div></div>`;
+        html += `<div class="seq-item"><span>${formatText(sec.title)}</span><div style="display:flex;gap:5px;"><button class="btn btn-outline btn-small" style="font-size:1rem;padding:4px 12px;" onclick="moveSecLogical('${sec.id}',-1)" title="Move Up">▲</button><button class="btn btn-outline btn-small" style="font-size:1rem;padding:4px 12px;" onclick="moveSecLogical('${sec.id}',1)" title="Move Down">▼</button></div></div>`;
       });
       html += `</div>`;
     } else {
@@ -897,11 +1015,11 @@ function renderEditor() {
       const sideSecs = resumeData.sections.filter((s) => s.column === "side");
       html += `<div style="display:flex;gap:15px;align-items:flex-start;"><div class="seq-col-box" style="flex:6;"><div class="seq-title">Main Column (60%)</div>`;
       mainSecs.forEach((sec) => {
-        html += `<div class="seq-item"><span>${formatText(sec.title)}</span><div style="display:flex;gap:3px;"><button class="btn btn-outline btn-small" onclick="moveSecLogical('${sec.id}',-1)">↑</button><button class="btn btn-outline btn-small" onclick="moveSecLogical('${sec.id}',1)">↓</button><button class="btn btn-outline btn-small" title="Move to Side Col" onclick="toggleSecCol('${sec.id}')">➡</button></div></div>`;
+        html += `<div class="seq-item"><span>${formatText(sec.title)}</span><div style="display:flex;gap:3px;"><button class="btn btn-outline btn-small" style="font-size:1.1rem;line-height:1;padding:3px 10px;" onclick="moveSecLogical('${sec.id}',-1)" title="Move Up in Main Column">▲</button><button class="btn btn-outline btn-small" style="font-size:1.1rem;line-height:1;padding:3px 10px;" onclick="moveSecLogical('${sec.id}',1)" title="Move Down in Main Column">▼</button><button class="btn btn-small" style="background:#0f766e;color:white;border:none;font-size:0.72rem;padding:4px 7px;white-space:nowrap;border-radius:4px;" title="Move to Side Column" onclick="toggleSecCol('${sec.id}')">▶ Side</button></div></div>`;
       });
       html += `</div><div class="seq-col-box" style="flex:4;"><div class="seq-title">Side Column (40%)</div>`;
       sideSecs.forEach((sec) => {
-        html += `<div class="seq-item"><span>${formatText(sec.title)}</span><div style="display:flex;gap:3px;"><button class="btn btn-outline btn-small" title="Move to Main Col" onclick="toggleSecCol('${sec.id}')">⬅</button><button class="btn btn-outline btn-small" onclick="moveSecLogical('${sec.id}',-1)">↑</button><button class="btn btn-outline btn-small" onclick="moveSecLogical('${sec.id}',1)">↓</button></div></div>`;
+        html += `<div class="seq-item"><span>${formatText(sec.title)}</span><div style="display:flex;gap:3px;"><button class="btn btn-small" style="background:#7c3aed;color:white;border:none;font-size:0.72rem;padding:4px 7px;white-space:nowrap;border-radius:4px;" title="Move to Main Column" onclick="toggleSecCol('${sec.id}')">◀ Main</button><button class="btn btn-outline btn-small" style="font-size:1.1rem;line-height:1;padding:3px 10px;" onclick="moveSecLogical('${sec.id}',-1)" title="Move Up in Side Column">▲</button><button class="btn btn-outline btn-small" style="font-size:1.1rem;line-height:1;padding:3px 10px;" onclick="moveSecLogical('${sec.id}',1)" title="Move Down in Side Column">▼</button></div></div>`;
       });
       html += `</div></div>`;
     }
@@ -921,6 +1039,10 @@ function renderEditor() {
             <button class="btn btn-primary" onclick="createNewSection()" style="width:100%">Create Section</button></div>`;
   } else {
     const sec = resumeData.sections.find((s) => s.id === activeTab);
+    if (!sec) {
+      setTab("personal");
+      return;
+    }
     const sIdx = resumeData.sections.indexOf(sec);
 
     html += `<div class="section-card"><div class="section-header">
@@ -932,9 +1054,12 @@ function renderEditor() {
       html += `<div class="form-group">
               <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:5px;">
                 <label style="margin-bottom:0;">Paragraph Content</label>
-                <button class="ai-btn" onclick="enhanceWithAI('sections.${sIdx}.value', 'txt-${sIdx}')">✨ AI Enhance <sup style="font-size:0.58rem; background:rgba(255,255,255,0.25); padding:1px 3px; border-radius:3px; font-weight:900; letter-spacing:0.5px;">BETA</sup></button>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <button class="ai-btn" style="background:linear-gradient(45deg,#0f766e,#3b82f6);" onclick="generateSummary(${sIdx})" title="Auto-generate from all your resume data">✨ Generate <sup style="font-size:0.55rem;background:rgba(255,255,255,0.2);padding:1px 3px;border-radius:3px;font-weight:900;">AI</sup></button>
+                  <button class="ai-btn" onclick="enhanceWithAI('sections.${sIdx}.value', 'txt-${sIdx}')" title="Rewrite and improve existing text">✍️ Enhance <sup style="font-size:0.55rem;background:rgba(255,255,255,0.2);padding:1px 3px;border-radius:3px;font-weight:900;">AI</sup></button>
+                </div>
               </div>
-              <textarea id="txt-${sIdx}" data-path="sections.${sIdx}.value" placeholder="Enter paragraph text here...">${escapeHTML(sec.value)}</textarea>
+              <textarea id="txt-${sIdx}" data-path="sections.${sIdx}.value" placeholder="Write your summary here, or click ✨ Generate to auto-create one from your resume data…" style="min-height:100px;">${escapeHTML(sec.value)}</textarea>
             </div>`;
     } else {
       sec.items.forEach((item, iIdx) => {
@@ -1012,8 +1137,8 @@ function renderEditor() {
                     <textarea id="desc-${sIdx}-${iIdx}" data-path="sections.${sIdx}.items.${iIdx}.${descPath}">${descText}</textarea>
                   </div>
                   <div class="project-links-container">
-                    <div class="form-group" style="margin-bottom:8px;"><label>🔗 Live Demo URL</label><input type="text" placeholder="https://..." data-path="sections.${sIdx}.items.${iIdx}.${sec.type === "complex" ? "liveLink" : "link"}" value="${liveLink}"></div>
-                    <div class="form-group" style="margin-bottom:0;"><label>💻 GitHub Repo URL</label><input type="text" placeholder="https://..." data-path="sections.${sIdx}.items.${iIdx}.${sec.type === "complex" ? "githubLink" : "github"}" value="${gitLink}"></div>
+                    <div class="form-group" style="margin-bottom:8px;"><label>🔗 Live Demo URL</label><input type="text" placeholder="https://..." data-path="sections.${sIdx}.items.${iIdx}.liveLink" value="${liveLink}"></div>
+                    <div class="form-group" style="margin-bottom:0;"><label>💻 GitHub Repo URL</label><input type="text" placeholder="https://..." data-path="sections.${sIdx}.items.${iIdx}.githubLink" value="${gitLink}"></div>
                   </div>`;
         } else {
           html += `<div class="form-group" style="margin-bottom:0;"><label>Text</label><textarea placeholder="Enter list item..." data-path="sections.${sIdx}.items.${iIdx}.text">${escapeHTML(item.text)}</textarea></div>`;
@@ -1050,6 +1175,141 @@ function attachInputListeners() {
     );
 }
 
+function moveLinkOrder(idx, dir) {
+  const links = resumeData.personal.links;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= links.length) return;
+  [links[idx], links[newIdx]] = [links[newIdx], links[idx]];
+  saveData();
+  renderEditor();
+}
+function moveSecLogical(secId, dir) {
+  const idx = resumeData.sections.findIndex((s) => s.id === secId);
+  if (idx === -1) return;
+  const sec = resumeData.sections[idx];
+
+  if (resumeData.template === "single-column") {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= resumeData.sections.length) return;
+    [resumeData.sections[idx], resumeData.sections[newIdx]] = [
+      resumeData.sections[newIdx],
+      resumeData.sections[idx],
+    ];
+  } else {
+    // Two-column: only reorder within the same column
+    const col = sec.column;
+    const colSecs = resumeData.sections.filter((s) => s.column === col);
+    const colPos = colSecs.findIndex((s) => s.id === secId);
+    const targetColPos = colPos + dir;
+    if (targetColPos < 0 || targetColPos >= colSecs.length) return;
+    const targetId = colSecs[targetColPos].id;
+    const targetIdx = resumeData.sections.findIndex((s) => s.id === targetId);
+    [resumeData.sections[idx], resumeData.sections[targetIdx]] = [
+      resumeData.sections[targetIdx],
+      resumeData.sections[idx],
+    ];
+  }
+  saveData();
+  renderEditor();
+}
+
+function toggleSecCol(secId) {
+  const sec = resumeData.sections.find((s) => s.id === secId);
+  if (!sec) return;
+  sec.column = sec.column === "main" ? "side" : "main";
+  saveData();
+  renderEditor();
+}
+function createNewSection() {
+  const titleEl = document.getElementById("new-sec-title");
+  const title = titleEl ? titleEl.value.trim() : "";
+  if (!title) return alert("Please enter a section title.");
+  const type = document.getElementById("new-sec-type").value;
+  const col = document.getElementById("new-sec-col").value;
+  const id = "sec_" + Date.now();
+  const newSec = { id, title, type, column: col };
+  if (type === "text") newSec.value = "";
+  else newSec.items = [];
+  resumeData.sections.push(newSec);
+  saveData();
+  setTab(id);
+}
+
+function deleteSection(id) {
+  if (!confirm("Delete this section? All data in it will be lost.")) return;
+  const idx = resumeData.sections.findIndex((s) => s.id === id);
+  if (idx !== -1) resumeData.sections.splice(idx, 1);
+  saveData();
+  setTab("personal");
+}
+function addItem(sIdx, type) {
+  const sec = resumeData.sections[sIdx];
+  if (!sec) return;
+  let newItem = {};
+  if (type === "education") {
+    newItem = {
+      degree: "",
+      school: "",
+      startDate: "",
+      endDate: "",
+      gradeType: "CGPA",
+      gradeValue: "",
+      description: "",
+    };
+  } else if (type === "experience") {
+    newItem = { role: "", company: "", date: "", description: "" };
+  } else if (type === "skills") {
+    newItem = { title: "", skillsList: [] };
+  } else if (type === "project" || type === "complex") {
+    newItem = {
+      title: "",
+      date: "",
+      description: "",
+      liveLink: "",
+      githubLink: "",
+    };
+  } else {
+    newItem = { text: "" };
+  }
+  sec.items.push(newItem);
+  saveData();
+  renderEditor();
+}
+
+function removeItem(sIdx, iIdx) {
+  resumeData.sections[sIdx].items.splice(iIdx, 1);
+  saveData();
+  renderEditor();
+}
+function addSkill(sIdx, iIdx) {
+  const input = document.getElementById("new-skill-" + sIdx + "-" + iIdx);
+  const val = input ? input.value.trim() : "";
+  if (!val) return;
+  const item = resumeData.sections[sIdx].items[iIdx];
+  if (!item.skillsList) item.skillsList = [];
+  item.skillsList.push(val);
+  saveData();
+  renderEditor();
+}
+
+function removeSkill(sIdx, iIdx, tIdx) {
+  resumeData.sections[sIdx].items[iIdx].skillsList.splice(tIdx, 1);
+  saveData();
+  renderEditor();
+}
+function handleDrop(event, sIdx, iIdx) {
+  event.preventDefault();
+  if (!draggedItem || draggedItem.sIdx !== sIdx) return;
+  const fromIdx = draggedItem.iIdx;
+  const toIdx = iIdx;
+  draggedItem = null;
+  if (fromIdx === toIdx) return;
+  const items = resumeData.sections[sIdx].items;
+  const [moved] = items.splice(fromIdx, 1);
+  items.splice(toIdx, 0, moved);
+  saveData();
+  renderEditor();
+}
 function applySettings() {
   const root = document.documentElement;
   const s = resumeData.settings;
@@ -1193,7 +1453,6 @@ function updatePageBreaks() {
     indicator.style.display = "none";
   }
 }
-
 document.addEventListener("DOMContentLoaded", () => {
   if (!localStorage.getItem("preetResumeVisitedV33"))
     document.getElementById("onboarding-overlay").style.display = "flex";
@@ -1212,7 +1471,6 @@ function dismissOnboarding(choice) {
   else if (choice === "blank") resetData(true);
   else if (choice === "tutorial") startTutorial();
 }
-
 let currentTourStep = 0;
 const tourSteps = [
   {
@@ -1321,7 +1579,7 @@ function endTutorial() {
     document.getElementById("tutorial-tooltip").style.display = "none";
   }, 400);
 }
-
+document.querySelector(".template-select").value = resumeData.template;
 applySettings();
 setTab("personal");
 renderPreview();
