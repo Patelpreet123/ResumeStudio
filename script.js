@@ -6,8 +6,8 @@ const blankData = {
   isDemo: false,
   settings: {
     accentColor: "#000000",
-    lineHeight: 1.4,
-    pagePadding: 5,
+    lineHeight: 1.5,
+    pagePadding: 10,
     font: "Calibri",
     aiApiKey: "",
   },
@@ -92,8 +92,8 @@ const demoData = {
   isDemo: true,
   settings: {
     accentColor: "#5B21B6",
-    lineHeight: 1.5,
-    pagePadding: 10,
+    lineHeight: 1.4,
+    pagePadding: 5,
     font: "Arial",
     aiApiKey: "",
   },
@@ -148,8 +148,8 @@ const demoData = {
         {
           degree: "Class XII CBSE",
           school: "Bhakt English Medium School, Kakrolia, Gujarat",
-          startDate: "July 2021",
-          endDate: "May 2023",
+          startDate: "",
+          endDate: "",
           gradeType: "Percentage",
           gradeValue: "79%",
           description: "",
