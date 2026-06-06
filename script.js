@@ -1013,11 +1013,11 @@ function renderEditor() {
     } else {
       const mainSecs = resumeData.sections.filter((s) => s.column === "main");
       const sideSecs = resumeData.sections.filter((s) => s.column === "side");
-      html += `<div style="display:flex;gap:15px;align-items:flex-start;"><div class="seq-col-box" style="flex:6;"><div class="seq-title">Main Column (60%)</div>`;
+      html += `<div style="display:flex;gap:15px;align-items:flex-start;"><div class="seq-col-box" style="flex:5;"><div class="seq-title">Main Column (60%)</div>`;
       mainSecs.forEach((sec) => {
         html += `<div class="seq-item"><span>${formatText(sec.title)}</span><div style="display:flex;gap:3px;"><button class="btn btn-outline btn-small" style="font-size:1.1rem;line-height:1;padding:3px 10px;" onclick="moveSecLogical('${sec.id}',-1)" title="Move Up in Main Column">▲</button><button class="btn btn-outline btn-small" style="font-size:1.1rem;line-height:1;padding:3px 10px;" onclick="moveSecLogical('${sec.id}',1)" title="Move Down in Main Column">▼</button><button class="btn btn-small" style="background:#0f766e;color:white;border:none;font-size:0.72rem;padding:4px 7px;white-space:nowrap;border-radius:4px;" title="Move to Side Column" onclick="toggleSecCol('${sec.id}')">▶ Side</button></div></div>`;
       });
-      html += `</div><div class="seq-col-box" style="flex:4;"><div class="seq-title">Side Column (40%)</div>`;
+      html += `</div><div class="seq-col-box" style="flex:5;"><div class="seq-title">Side Column (40%)</div>`;
       sideSecs.forEach((sec) => {
         html += `<div class="seq-item"><span>${formatText(sec.title)}</span><div style="display:flex;gap:3px;"><button class="btn btn-small" style="background:#7c3aed;color:white;border:none;font-size:0.72rem;padding:4px 7px;white-space:nowrap;border-radius:4px;" title="Move to Main Column" onclick="toggleSecCol('${sec.id}')">◀ Main</button><button class="btn btn-outline btn-small" style="font-size:1.1rem;line-height:1;padding:3px 10px;" onclick="moveSecLogical('${sec.id}',-1)" title="Move Up in Side Column">▲</button><button class="btn btn-outline btn-small" style="font-size:1.1rem;line-height:1;padding:3px 10px;" onclick="moveSecLogical('${sec.id}',1)" title="Move Down in Side Column">▼</button></div></div>`;
       });
