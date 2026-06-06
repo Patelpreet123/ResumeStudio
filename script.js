@@ -7,7 +7,7 @@ const blankData = {
   settings: {
     accentColor: "#000000",
     lineHeight: 1.4,
-    pagePadding: 15,
+    pagePadding: 5,
     font: "Calibri",
     aiApiKey: "",
   },
@@ -128,7 +128,7 @@ const demoData = {
       type: "text",
       column: "main",
       value:
-        "3rd-year B.Tech CSE student at Parul Institute of Technology (9.43 CGPA), proficient in Java, JavaScript, and the MERN stack. Built and deployed full-stack projects including RentalHub (a rental management system) and browser-based JavaScript games, with live demos hosted on GitHub Pages and Vercel. Active competitive programmer with 400+ LeetCode problems solved (Rating: 1723), and a finalist at SIH 2025 and the ODOO × GCET Hackathon 2025.",
+        "CSE undergraduate with a strong foundation in Data Structures & Algorithms and frontend development. Proficient in Java, JavaScript, HTML5, and CSS3, with hands-on experience building interactive web applications using DOM manipulation and event-driven logic. Actively involved in competitive programming and consistently applying problem-solving skills to real projects and coding challenges.",
     },
     {
       id: "education",
