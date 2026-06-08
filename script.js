@@ -1699,22 +1699,11 @@ function updatePreviewScale() {
   page.style.transform = scale < 1 ? `scale(${scale.toFixed(4)})` : "none";
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// FIX: getA4Pixels()
-// Measures real A4 dimensions in pixels using a hidden CSS ruler div.
-// This is browser-accurate because it uses the same CSS mm→px engine as
-// the resume page itself — no hardcoded DPI math.
-// The ruler is created once and reused; it ignores any CSS transform
-// scaling applied to the preview because it is a sibling of the preview,
-// not a child of it.
-// ─────────────────────────────────────────────────────────────────────────
 function getA4Pixels() {
   let ruler = document.getElementById("_a4_ruler");
   if (!ruler) {
     ruler = document.createElement("div");
     ruler.id = "_a4_ruler";
-    // position:fixed keeps it out of the layout flow and unaffected by
-    // any transform on parent elements.
     ruler.style.cssText =
       "position:fixed;left:-9999px;top:0;" +
       "width:210mm;height:297mm;" +
@@ -1723,34 +1712,18 @@ function getA4Pixels() {
     document.body.appendChild(ruler);
   }
   const r = ruler.getBoundingClientRect();
-  // getBoundingClientRect on a position:fixed element with no transform
-  // returns the true CSS-pixel dimensions, matching what the browser
-  // uses when rendering mm-based widths/heights.
   return { w: r.width, h: r.height };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// FIX: getPrintMeasureHeight()
-// Clones the resume content into a hidden probe div that is sized to the
-// actual A4 width (from the ruler above) — NOT from source.offsetWidth or
-// getBoundingClientRect(), both of which can return the wrong value when a
-// CSS transform:scale() has been applied to the preview page.
-// ─────────────────────────────────────────────────────────────────────────
 function getPrintMeasureHeight() {
   const source = document.getElementById("resume-preview");
   if (!source) return 0;
-
-  // Always use the CSS-accurate A4 width — never the (possibly scaled)
-  // source element dimensions.
   const { w: a4w } = getA4Pixels();
 
   let probe = document.getElementById("resume-print-probe");
   if (!probe) {
     probe = document.createElement("div");
     probe.id = "resume-print-probe";
-    // position:fixed + off-screen left: element is rendered at full
-    // CSS-pixel size, inherits :root CSS variables, and is invisible to
-    // the user. transform:none ensures the probe is never scaled.
     probe.style.cssText =
       "position:fixed;left:-9999px;top:0;" +
       "transform:none;box-shadow:none;border-radius:0;" +
@@ -1758,52 +1731,26 @@ function getPrintMeasureHeight() {
       "pointer-events:none;visibility:hidden;";
     document.body.appendChild(probe);
   }
-
-  // Set probe to true A4 width so text reflow matches print output.
   probe.style.width = a4w + "px";
   probe.style.maxWidth = a4w + "px";
   probe.style.minHeight = "0";
   probe.style.height = "auto";
-
-  // Copy resume class list so all CSS rules (layout, fonts, spacing) apply.
   probe.className = source.className;
   probe.innerHTML = source.innerHTML;
-
-  // Remove any page-break decoration lines we may have injected earlier.
   probe.querySelectorAll(".page-break-line").forEach((el) => el.remove());
 
   return probe.getBoundingClientRect().height;
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// FIX: updatePageBreaks()
-// Uses the ruler-based A4 height instead of the old hardcoded
-// (297 * 96 / 25.4) calculation.
-// Tolerance buffer is now 5px (~1.3mm) — just enough for sub-pixel
-// rounding; far smaller than the old 72px single-column buffer which was
-// causing false negatives when content was genuinely close to the edge.
-// ─────────────────────────────────────────────────────────────────────────
 function updatePageBreaks() {
   const page = document.getElementById("resume-preview");
   if (!page) return;
-
-  // Remove any previously injected break lines.
   page.querySelectorAll(".page-break-line").forEach((el) => el.remove());
 
   const indicator = document.getElementById("overflow-indicator");
   if (!indicator) return;
-
-  // Measure both content height and A4 height using the same browser
-  // CSS-pixel engine so they are always on the same scale.
   const { h: a4H } = getA4Pixels();
   const contentH = getPrintMeasureHeight();
-
-  // Safety: if probe returned 0 (edge-case timing issue), skip.
   if (!contentH || !a4H) return;
-
-  // 5px tolerance accounts for sub-pixel font rounding. This is ~1.3mm
-  // and will never hide a real overflow — real overflows are always tens
-  // of pixels beyond the boundary.
   const TOLERANCE_PX = 5;
 
   if (contentH > a4H + TOLERANCE_PX) {
@@ -1812,7 +1759,6 @@ function updatePageBreaks() {
     for (let i = 1; i < pages; i++) {
       const line = document.createElement("div");
       line.className = "page-break-line";
-      // Position the dashed line relative to the (unscaled) resume page.
       line.style.top = Math.round(i * a4H) + "px";
       line.innerHTML = `<span class="page-break-label">Page ${i + 1} starts here ✂</span>`;
       page.appendChild(line);
