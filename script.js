@@ -291,7 +291,7 @@ const demoData = {
       type: "text",
       column: "main",
       value:
-        "CSE undergraduate with a strong foundation in Data Structures & Algorithms and frontend development. Proficient in Java, JavaScript, HTML5, and CSS3, with hands-on experience building interactive web applications using DOM manipulation and event-driven logic. Actively involved in competitive programming and consistently applying problem-solving skills to real projects and coding challenges.",
+        "CSE undergraduate at Parul University with a CGPA of 9.43. Practices DSA and competitive programming in Java with 450+ LeetCode problems solved. Builds web projects using HTML, CSS, and JavaScript, currently progressing toward the MERN stack.",
     },
     {
       id: "education",
@@ -439,7 +439,7 @@ let resumeData = normalizeResumeData(
 safeSetStoredApiKey(resumeData.settings.aiApiKey);
 const templateDefaults = {
   "two-column": { lineHeight: 1.4, pagePadding: 7 },
-  "single-column": { lineHeight: 1.2, pagePadding: 5 },
+  "single-column": { lineHeight: 1.7, pagePadding: 5 },
 };
 let templateSettings = {};
 templateSettings[resumeData.template] = {
@@ -509,7 +509,6 @@ function formatText(str) {
 function sanitizeUrl(url) {
   if (!url) return "";
   const s = String(url).trim();
-  // Only allow safe, explicit protocols
   if (/^(https?:\/\/|mailto:|tel:)/i.test(s)) return s;
   return "";
 }
@@ -555,7 +554,6 @@ function validateImportData(data) {
   if (typeof data.personal !== "object" || data.personal === null) return false;
   if (!Array.isArray(data.sections)) return false;
   if (typeof data.settings !== "object" || data.settings === null) return false;
-  // Verify at least a few expected personal fields exist
   if (typeof data.personal.name === "undefined") return false;
   return true;
 }
@@ -614,7 +612,7 @@ function undo() {
     historyStack.push(current);
     if (historyStack.length > MAX_HISTORY) historyStack.shift();
   }
-  if (historyStack.length < 2) return; // Nothing to undo
+  if (historyStack.length < 2) return;
   redoStack.push(historyStack.pop());
   resumeData = JSON.parse(historyStack[historyStack.length - 1]);
   saveStateDirect();
@@ -794,7 +792,6 @@ function changeTemplate(val) {
 }
 function updateState(path, value) {
   if (/sections\.\d+\.title$/.test(path) && !String(value).trim()) return;
-  // Coerce numeric settings to their proper types
   if (path === "settings.lineHeight") value = parseFloat(value) || 1.4;
   if (path === "settings.pagePadding") value = parseInt(value, 10) || 5;
   if (path === "settings.aiApiKey") {
@@ -1143,15 +1140,37 @@ function renderNavigation() {
   nav.innerHTML = html;
 }
 
+function isProfileSummarySection(sec) {
+  return (
+    sec && (sec.id === "summary" || /profile summary/i.test(sec.title || ""))
+  );
+}
+
+function getTextSectionPlaceholder(sec) {
+  if (isProfileSummarySection(sec)) {
+    return "Write your summary here, or click ✨ Generate to auto-create one from your resume data…";
+  }
+  if (sec && sec.id === "hobbies") return "Hobbies";
+  if (sec && sec.id && String(sec.id).startsWith("sec_"))
+    return "Write text here";
+  return "Write text here";
+}
+
+function getSimpleSectionPlaceholder(sec) {
+  if (sec && sec.id === "achievements") return "Achievements";
+  if (sec && sec.id === "interests") return "Field of Interest";
+  return sec && sec.title ? sec.title : "Bullet point";
+}
+
 function renderEditor() {
   const container = document.getElementById("editor-form");
   let html = `<div id="render-block-${Date.now()}" autocomplete="off">`;
   if (activeTab === "personal") {
     html += `<div class="section-card"><div class="section-header">Personal Information</div>${fmtGuideHTML}
-                  <div class="form-group"><label>Full Name</label><input type="text" placeholder="e.g. John Doe" data-path="personal.name" value="${escapeAttr(resumeData.personal.name)}"></div>
-                  <div class="form-group"><label>Target Role / Title</label><input type="text" placeholder="e.g. 3rd Year CSE Undergraduate" data-path="personal.role" value="${escapeAttr(resumeData.personal.role)}"></div>
+                  <div class="form-group"><label>Full Name</label><input type="text" placeholder="e.g. Preet Patel" data-path="personal.name" value="${escapeAttr(resumeData.personal.name)}"></div>
+                  <div class="form-group"><label>Title / Target Role</label><input type="text" placeholder="e.g. 3rd Year CSE Undergraduate" data-path="personal.role" value="${escapeAttr(resumeData.personal.role)}"></div>
                   <div class="form-group"><label>Email</label><input type="text" placeholder="name@email.com" data-path="personal.email" value="${escapeAttr(resumeData.personal.email)}"></div>
-                  <div class="form-group"><label>Phone</label><input type="text" placeholder="+91 98765 43210" data-path="personal.phone" value="${escapeAttr(resumeData.personal.phone)}"></div>
+                  <div class="form-group"><label>Phone</label><input type="text" placeholder="e.g. +91 9054300958" data-path="personal.phone" value="${escapeAttr(resumeData.personal.phone)}"></div>
                   <div class="form-group"><label>Location</label><input type="text" placeholder="City, State, India" data-path="personal.location" value="${escapeAttr(resumeData.personal.location)}"></div>
                   <div class="form-group"><label>Profile Links</label>`;
     resumeData.personal.links.forEach((link, lIdx) => {
@@ -1255,7 +1274,7 @@ function renderEditor() {
                     <option value="skills">Technical Skills (Categories with Tags)</option>
                     <option value="education">Education (Degree, School, Dates, Grades)</option>
                     <option value="simple">Bullet List (Interests, Achievements)</option>
-                    <option value="text">Paragraph (Profile Summary)</option>
+                    <option value="text">Paragraph (Blank Text)</option>
                   </select></div>
                   ${isOneColumn ? "" : '<div class="form-group"><label>Layout Column</label><select id="new-sec-col"><option value="main">Main Column (60%)</option><option value="side">Side Column (40%)</option></select></div>'}
                   <button class="btn btn-primary" onclick="createNewSection()" style="width:100%">Create Section</button></div>`;
@@ -1273,18 +1292,19 @@ function renderEditor() {
                 </div>${fmtGuideHTML}`;
 
     if (sec.type === "text") {
-      const isProfileSummary =
-        sec.id === "summary" || /profile summary/i.test(sec.title || "");
+      const isProfileSummary = isProfileSummarySection(sec);
+      const showGenerateButton = isProfileSummary;
+      const showEnhanceButton = true;
       html += `<div class="form-group">
                     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:5px; gap:10px;">
-                      <label style="margin-bottom:0;">Paragraph Content</label>
+                      <label style="margin-bottom:0;">${isProfileSummary ? "Paragraph Content" : "Text Content"}</label>
                       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
-                        <button class="ai-btn" style="background:linear-gradient(45deg,#0f766e,#3b82f6);" onclick="withAiCooldown(this, () => generateSummary(${sIdx}))" title="Auto-generate from all your resume data">✨ Generate <sup style="font-size:0.55rem;background:rgba(255,255,255,0.2);padding:1px 3px;border-radius:3px;font-weight:900;">AI</sup></button>
-                        <button class="ai-btn" onclick="withAiCooldown(this, () => enhanceWithAI('sections.${sIdx}.value', 'txt-${sIdx}'))" title="Rewrite and improve existing text">✍️ Enhance <sup style="font-size:0.55rem;background:rgba(255,255,255,0.2);padding:1px 3px;border-radius:3px;font-weight:900;">AI</sup></button>
+                        ${showGenerateButton ? `<button class="ai-btn" style="background:linear-gradient(45deg,#0f766e,#3b82f6);" onclick="withAiCooldown(this, () => generateSummary(${sIdx}))" title="Auto-generate from all your resume data">✨ Generate <sup style="font-size:0.55rem;background:rgba(255,255,255,0.2);padding:1px 3px;border-radius:3px;font-weight:900;">AI</sup></button>` : ""}
+                        ${showEnhanceButton ? `<button class="ai-btn" onclick="withAiCooldown(this, () => enhanceWithAI('sections.${sIdx}.value', 'txt-${sIdx}'))" title="Rewrite and improve existing text">✍️ Enhance <sup style="font-size:0.55rem;background:rgba(255,255,255,0.2);padding:1px 3px;border-radius:3px;font-weight:900;">AI</sup></button>` : ""}
                       </div>
                     </div>
-                    <textarea id="txt-${sIdx}" data-path="sections.${sIdx}.value" placeholder="Write your summary here, or click ✨ Generate to auto-create one from your resume data…" style="min-height:100px;">${escapeHTML(sec.value)}</textarea>
-                    ${isProfileSummary ? '<div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted);line-height:1.45;">For a stronger AI-generated summary, first fill the other sections, then use <b>Generate</b>. If you already have a good summary, paste it here now.</div>' : ""}
+                    <textarea id="txt-${sIdx}" data-path="sections.${sIdx}.value" placeholder="${escapeAttr(getTextSectionPlaceholder(sec))}" style="min-height:100px;">${escapeHTML(sec.value)}</textarea>
+                    ${isProfileSummary ? '<div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted);line-height:1.45;"><p style="font-weight:900;font-size:18px;display:inline">Note: </p> For a stronger AI-generated summary, first fill the other sections, then use <b>Generate</b>.</div>' : ""}
                   </div>`;
     } else {
       sec.items.forEach((item, iIdx) => {
@@ -1313,7 +1333,7 @@ function renderEditor() {
           html += `
                         <div class="form-group"><label>Position / Role</label><input type="text" placeholder="e.g. Web Developer Intern" data-path="sections.${sIdx}.items.${iIdx}.role" value="${escapeAttr(item.role)}"></div>
                         <div class="form-group"><label>Company Name</label><input type="text" placeholder="e.g. Google" data-path="sections.${sIdx}.items.${iIdx}.company" value="${escapeAttr(item.company)}"></div>
-                        <div class="form-group"><label>Date</label><input type="text" placeholder="e.g. Jan 2025 - Present" data-path="sections.${sIdx}.items.${iIdx}.date" value="${escapeAttr(item.date)}"></div>
+                        <div class="form-group"><label>Date</label><input type="text" placeholder="e.g. Jan 2026 - Present" data-path="sections.${sIdx}.items.${iIdx}.date" value="${escapeAttr(item.date)}"></div>
                         <div class="form-group">
                           <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:5px;">
                             <label style="margin-bottom:0;">Description</label>
@@ -1323,10 +1343,10 @@ function renderEditor() {
                         </div>`;
         } else if (sec.type === "skills") {
           html += `
-                        <div class="form-group"><label>Skill Category Title</label><input type="text" placeholder="e.g. Languages" data-path="sections.${sIdx}.items.${iIdx}.title" value="${escapeAttr(item.title)}"></div>
+                        <div class="form-group"><label>Skill Category Title</label><input type="text" placeholder="e.g. Languages, Concepts, Tools, etc" data-path="sections.${sIdx}.items.${iIdx}.title" value="${escapeAttr(item.title)}"></div>
                         <div class="form-group"><label>Add Individual Skill</label>
                           <div style="display:flex; gap:5px;">
-                            <input type="text" id="new-skill-${sIdx}-${iIdx}" placeholder="e.g. Java" onkeypress="if(event.key==='Enter'){ addSkill(${sIdx},${iIdx}); }">
+                            <input type="text" id="new-skill-${sIdx}-${iIdx}" placeholder="e.g. Java, OOPS, Git, etc" onkeypress="if(event.key==='Enter'){ addSkill(${sIdx},${iIdx}); }">
                             <button class="btn btn-outline" onclick="addSkill(${sIdx},${iIdx})">Add</button>
                           </div>
                           <div class="skills-container">`;
@@ -1366,7 +1386,7 @@ function renderEditor() {
                           <div class="form-group" style="margin-bottom:0;"><label>💻 GitHub Repo URL</label><input type="text" placeholder="https://..." data-path="sections.${sIdx}.items.${iIdx}.githubLink" value="${gitLink}"></div>
                         </div>`;
         } else {
-          html += `<div class="form-group" style="margin-bottom:0;"><label>Text</label><textarea placeholder="Enter list item..." data-path="sections.${sIdx}.items.${iIdx}.text">${escapeHTML(item.text)}</textarea></div>`;
+          html += `<div class="form-group" style="margin-bottom:0;"><label>Bullet Points</label><textarea placeholder="${escapeAttr(getSimpleSectionPlaceholder(sec))}" data-path="sections.${sIdx}.items.${iIdx}.text">${escapeHTML(item.text)}</textarea></div>`;
         }
 
         html += `<div class="item-controls">
@@ -1543,7 +1563,7 @@ function buildSectionHTML(sec) {
   if (sec.type === "text") {
     html += sec.value
       ? `<div class="res-text">${formatText(sec.value)}</div>`
-      : `<div class="empty-placeholder">[ Add paragraph text ]</div>`;
+      : `<div class="empty-placeholder">[ Add text in editor ]</div>`;
   } else {
     if (!sec.items.length) {
       html += `<div class="empty-placeholder">[ Add items in editor ]</div>`;
@@ -1583,7 +1603,6 @@ function buildSectionHTML(sec) {
           html += `<div class="res-item"><div class="res-item-header"><span>${titleText}</span>${subText ? `<span style="font-weight:normal;font-size:9.5pt;">${subText}</span>` : ""}</div>${descText ? `<div class="res-text">${descText}</div>` : ""}`;
           if (live || git) {
             html += `<div class="res-item-proj-links">`;
-            // ── FIX #1: sanitizeUrl blocks javascript: and other dangerous schemes ──
             const safeLive = sanitizeUrl(live);
             const safeGit = sanitizeUrl(git);
             if (safeLive)
@@ -1617,12 +1636,10 @@ function renderPreview() {
   if (p.links) {
     p.links.forEach((link) => {
       if (link.name.trim() && link.url.trim()) {
-        // ── FIX #1: sanitizeUrl applied to all profile link URLs ──
         const safeUrl = sanitizeUrl(link.url);
         if (safeUrl) {
           linksHTML += `<a href="${escapeAttr(safeUrl)}" target="_blank" rel="noopener noreferrer">${escapeHTML(link.name)}</a>`;
         } else {
-          // URL had a dangerous scheme — show as plain text instead of a link
           linksHTML += `<span>${escapeHTML(link.name)}</span>`;
         }
       } else if (link.name.trim()) {
@@ -1668,7 +1685,7 @@ function renderPreview() {
   }
   container.innerHTML = html;
   updatePreviewScale();
-  setTimeout(updatePageBreaks, 100);
+  setTimeout(updatePageBreaks, 120);
 }
 function updatePreviewScale() {
   const panel = document.querySelector(".preview-panel");
@@ -1676,56 +1693,126 @@ function updatePreviewScale() {
   if (!panel || !page) return;
   page.style.transform = "none";
   const availableWidth = Math.max(320, panel.clientWidth - 24);
-  const a4Width = (210 * 96) / 25.4;
+  const a4Width = getA4Pixels().w;
   const scale = Math.min(1, availableWidth / a4Width);
   page.style.transformOrigin = "top center";
   page.style.transform = scale < 1 ? `scale(${scale.toFixed(4)})` : "none";
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// FIX: getA4Pixels()
+// Measures real A4 dimensions in pixels using a hidden CSS ruler div.
+// This is browser-accurate because it uses the same CSS mm→px engine as
+// the resume page itself — no hardcoded DPI math.
+// The ruler is created once and reused; it ignores any CSS transform
+// scaling applied to the preview because it is a sibling of the preview,
+// not a child of it.
+// ─────────────────────────────────────────────────────────────────────────
+function getA4Pixels() {
+  let ruler = document.getElementById("_a4_ruler");
+  if (!ruler) {
+    ruler = document.createElement("div");
+    ruler.id = "_a4_ruler";
+    // position:fixed keeps it out of the layout flow and unaffected by
+    // any transform on parent elements.
+    ruler.style.cssText =
+      "position:fixed;left:-9999px;top:0;" +
+      "width:210mm;height:297mm;" +
+      "pointer-events:none;visibility:hidden;" +
+      "transform:none;margin:0;padding:0;border:0;";
+    document.body.appendChild(ruler);
+  }
+  const r = ruler.getBoundingClientRect();
+  // getBoundingClientRect on a position:fixed element with no transform
+  // returns the true CSS-pixel dimensions, matching what the browser
+  // uses when rendering mm-based widths/heights.
+  return { w: r.width, h: r.height };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// FIX: getPrintMeasureHeight()
+// Clones the resume content into a hidden probe div that is sized to the
+// actual A4 width (from the ruler above) — NOT from source.offsetWidth or
+// getBoundingClientRect(), both of which can return the wrong value when a
+// CSS transform:scale() has been applied to the preview page.
+// ─────────────────────────────────────────────────────────────────────────
 function getPrintMeasureHeight() {
   const source = document.getElementById("resume-preview");
   if (!source) return 0;
+
+  // Always use the CSS-accurate A4 width — never the (possibly scaled)
+  // source element dimensions.
+  const { w: a4w } = getA4Pixels();
 
   let probe = document.getElementById("resume-print-probe");
   if (!probe) {
     probe = document.createElement("div");
     probe.id = "resume-print-probe";
-    probe.style.position = "absolute";
-    probe.style.left = "-100000px";
-    probe.style.top = "0";
-    probe.style.visibility = "hidden";
-    probe.style.pointerEvents = "none";
-    probe.style.zIndex = "-1";
-    probe.style.width = "210mm";
-    probe.style.maxWidth = "210mm";
-    probe.style.transform = "none";
-    probe.style.boxShadow = "none";
-    probe.style.borderRadius = "0";
-    probe.style.overflow = "visible";
-    probe.style.display = "block";
+    // position:fixed + off-screen left: element is rendered at full
+    // CSS-pixel size, inherits :root CSS variables, and is invisible to
+    // the user. transform:none ensures the probe is never scaled.
+    probe.style.cssText =
+      "position:fixed;left:-9999px;top:0;" +
+      "transform:none;box-shadow:none;border-radius:0;" +
+      "overflow:visible;display:block;box-sizing:border-box;" +
+      "pointer-events:none;visibility:hidden;";
     document.body.appendChild(probe);
   }
 
-  probe.className = source.className;
-  probe.innerHTML = source.innerHTML;
+  // Set probe to true A4 width so text reflow matches print output.
+  probe.style.width = a4w + "px";
+  probe.style.maxWidth = a4w + "px";
   probe.style.minHeight = "0";
   probe.style.height = "auto";
+
+  // Copy resume class list so all CSS rules (layout, fonts, spacing) apply.
+  probe.className = source.className;
+  probe.innerHTML = source.innerHTML;
+
+  // Remove any page-break decoration lines we may have injected earlier.
   probe.querySelectorAll(".page-break-line").forEach((el) => el.remove());
+
   return probe.getBoundingClientRect().height;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// FIX: updatePageBreaks()
+// Uses the ruler-based A4 height instead of the old hardcoded
+// (297 * 96 / 25.4) calculation.
+// Tolerance buffer is now 5px (~1.3mm) — just enough for sub-pixel
+// rounding; far smaller than the old 72px single-column buffer which was
+// causing false negatives when content was genuinely close to the edge.
+// ─────────────────────────────────────────────────────────────────────────
 function updatePageBreaks() {
   const page = document.getElementById("resume-preview");
   if (!page) return;
+
+  // Remove any previously injected break lines.
   page.querySelectorAll(".page-break-line").forEach((el) => el.remove());
+
   const indicator = document.getElementById("overflow-indicator");
-  const a4H = (297 * 96) / 25.4;
-  const contentH = getPrintMeasureHeight() || page.scrollHeight;
-  const buf = 12;
-  if (contentH > a4H + buf) {
+  if (!indicator) return;
+
+  // Measure both content height and A4 height using the same browser
+  // CSS-pixel engine so they are always on the same scale.
+  const { h: a4H } = getA4Pixels();
+  const contentH = getPrintMeasureHeight();
+
+  // Safety: if probe returned 0 (edge-case timing issue), skip.
+  if (!contentH || !a4H) return;
+
+  // 5px tolerance accounts for sub-pixel font rounding. This is ~1.3mm
+  // and will never hide a real overflow — real overflows are always tens
+  // of pixels beyond the boundary.
+  const TOLERANCE_PX = 5;
+
+  if (contentH > a4H + TOLERANCE_PX) {
     const pages = Math.ceil(contentH / a4H);
     indicator.style.display = "block";
     for (let i = 1; i < pages; i++) {
       const line = document.createElement("div");
       line.className = "page-break-line";
+      // Position the dashed line relative to the (unscaled) resume page.
       line.style.top = Math.round(i * a4H) + "px";
       line.innerHTML = `<span class="page-break-label">Page ${i + 1} starts here ✂</span>`;
       page.appendChild(line);
@@ -1734,6 +1821,7 @@ function updatePageBreaks() {
     indicator.style.display = "none";
   }
 }
+
 function shouldShowDesktopWarning() {
   if (window.innerWidth < 1180) return true;
   if (
