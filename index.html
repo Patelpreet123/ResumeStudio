@@ -1,13 +1,12 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Resume Studio | Where Great Resumes Begin</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <body>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <div id="onboarding-overlay" class="overlay">
       <div class="overlay-modal" style="position: relative">
         <button
@@ -17,18 +16,22 @@
         >
           ×
         </button>
-
         <h2>Start Menu</h2>
         <p>Welcome! How would you like to begin building your resume?</p>
         <div class="overlay-buttons">
           <button
-            class="btn btn-success"
-            style="padding: 12px; font-size: 1rem"
-            onclick="dismissOnboarding('demo')"
+            class="btn btn-outline"
+            style="
+              padding: 12px;
+              font-size: 1rem;
+              border-color: var(--primary);
+              color: var(--primary);
+            "
+            onclick="dismissOnboarding('blank')"
           >
-            📄 Load Demo CV <br /><span
-              style="font-size: 0.8rem; font-weight: normal; opacity: 0.9"
-              >(See a filled professional example)</span
+            🆕 New Template<br /><span
+              style="font-size: 0.8rem; font-weight: normal; opacity: 0.8"
+              >(Start from a clean resume layout)</span
             >
           </button>
           <button
@@ -41,19 +44,19 @@
             "
             onclick="dismissOnboarding('tutorial')"
           >
-            🎓 Interactive Tutorial <br /><span
+            🎓 Interactive Tutorial<br /><span
               style="font-size: 0.8rem; font-weight: normal; opacity: 0.8"
               >(Take a quick guided tour of the tools)</span
             >
           </button>
           <button
-            class="btn btn-outline"
+            class="btn btn-success"
             style="padding: 12px; font-size: 1rem"
-            onclick="dismissOnboarding('blank')"
+            onclick="dismissOnboarding('demo')"
           >
-            📝 Start Blank Resume <br /><span
-              style="font-size: 0.8rem; font-weight: normal; opacity: 0.8"
-              >(Start typing your own data immediately)</span
+            📄 Load My Demo Resume<br /><span
+              style="font-size: 0.8rem; font-weight: normal; opacity: 0.9"
+              >(See a filled professional example)</span
             >
           </button>
         </div>
@@ -69,10 +72,43 @@
         </p>
       </div>
     </div>
-
+    <div id="desktop-warning-overlay" class="overlay" style="z-index: 10050">
+      <div
+        class="overlay-modal desktop-warning-modal"
+        style="position: relative"
+      >
+        <button
+          onclick="dismissDesktopWarning()"
+          title="Continue to the app"
+          class="modal-close-x"
+        >
+          ×
+        </button>
+        <h2>🖥️ Best on Desktop</h2>
+        <p>
+          This resume maker is designed for larger screens. On tablets or
+          mobile, the editor and preview become cramped, so the experience is
+          much better on a desktop or laptop.
+        </p>
+        <div class="desktop-warning-box">
+          <div class="desktop-warning-badge">⚠️ Recommended screen size</div>
+          <div>
+            For the cleanest editing, preview, and print results, use a wider
+            desktop view.
+            <br />
+            You can still continue here, but some controls may feel tight.
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end">
+          <button class="btn btn-primary" onclick="dismissDesktopWarning()">
+            Continue anyway
+          </button>
+        </div>
+      </div>
+    </div>
     <div id="ats-overlay" class="overlay">
       <div class="overlay-modal" id="ats-modal">
-        <button class="modal-close-x" onclick="closeATSModal()">X</button>
+        <button class="modal-close-x" onclick="closeATSModal()">×</button>
         <h2>
           🎯 AI ATS Checker
           <span class="beta-badge" style="font-size: 0.65rem">BETA</span>
@@ -95,18 +131,87 @@
           <button class="btn btn-outline" onclick="closeATSModal()">
             Close
           </button>
-          <button class="btn btn-success" id="ats-btn" onclick="runATSCheck()">
+          <button
+            class="btn btn-success"
+            id="ats-btn"
+            onclick="withAiCooldown(this, () => runATSCheck())"
+          >
             Analyze Resume
           </button>
         </div>
         <div id="ats-results"></div>
       </div>
     </div>
-
+    <div id="feedback-overlay" class="overlay">
+      <div class="overlay-modal" id="feedback-modal">
+        <button class="modal-close-x" onclick="closeFeedbackModal()">×</button>
+        <h2>💬 Send Feedback</h2>
+        <p>Found a bug or have a suggestion? We'd love to hear from you!</p>
+        <div class="form-group">
+          <label>Feedback Type</label>
+          <select id="fb-type">
+            <option value="Bug Report">🐛 Bug Report</option>
+            <option value="Feature Request">✨ Feature Request</option>
+            <option value="General Feedback">💬 General Feedback</option>
+            <option value="UI Issue">🎨 UI / Design Issue</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Your Message <span style="color: #ef4444">*</span></label>
+          <textarea
+            id="fb-message"
+            placeholder="Describe the bug or share your feedback clearly…"
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label>Your Name <span style="color: #ef4444">*</span></label>
+          <input type="text" id="fb-name" placeholder="e.g. Preet Patel" />
+        </div>
+        <div class="form-group">
+          <label
+            >Your Email
+            <span style="color: var(--text-muted); font-weight: normal"
+              >(optional)</span
+            ></label
+          >
+          <input type="email" id="fb-email" placeholder="e.g. name@email.com" />
+        </div>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 5px;
+          "
+        >
+          <button class="btn btn-outline" onclick="closeFeedbackModal()">
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            id="fb-submit-btn"
+            onclick="submitFeedback()"
+          >
+            📤 Send Feedback
+          </button>
+        </div>
+        <div
+          id="fb-status"
+          style="
+            margin-top: 12px;
+            text-align: center;
+            font-size: 0.85rem;
+            min-height: 20px;
+          "
+        ></div>
+      </div>
+    </div>
     <div id="tutorial-spotlight" class="spotlight-cutout"></div>
     <div id="tutorial-tooltip" class="tutorial-tooltip"></div>
-    <div id="overflow-indicator">⚠️ Content exceeds one A4 page</div>
-
+    <div id="overflow-indicator">
+      ⚠️ This resume extends to more than one A4 page
+    </div>
+    <div id="save-status-toast">✓ Saved successfully</div>
     <div class="app-container">
       <div class="editor-panel">
         <div class="editor-header">
@@ -227,10 +332,18 @@
               <button
                 id="tour-ats"
                 class="btn btn-outline btn-small"
-                onclick="openATSModal()"
+                onclick="withAiCooldown(this, () => openATSModal())"
                 style="border: none; color: #a855f7; font-weight: bold"
               >
                 🎯 ATS Check <span class="beta-badge">BETA</span>
+              </button>
+              <button
+                class="btn btn-outline btn-small"
+                onclick="openFeedbackModal()"
+                style="border: none; color: #10b981; font-weight: 600"
+                title="Report a bug or suggest a feature"
+              >
+                💬 Feedback
               </button>
             </div>
 
@@ -254,7 +367,6 @@
             </div>
           </div>
         </div>
-
         <div class="editor-nav" id="editor-nav"></div>
         <div class="editor-content" id="editor-form"></div>
       </div>
@@ -264,5 +376,5 @@
       </div>
     </div>
     <script src="script.js"></script>
-</body>
+  </body>
 </html>
