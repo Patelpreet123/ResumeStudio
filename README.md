@@ -372,14 +372,12 @@ You can reopen the Start Menu anytime using the **🪄 Menu** button in the top 
 
 This project was built with the help of AI as a learning exercise. Here's what the process taught:
 
-- **localStorage management** — saving, reading, migrating, and validating user data in the browser
-- **REST API integration** — connecting to external APIs using fetch and async/await with proper error handling
-- **DOM manipulation** — dynamically building and re-rendering complex UI entirely through JavaScript
-- **Google Sheets + Apps Script** — collecting real user feedback without any backend infrastructure
-- **CSS print styling** — using `@media print` to produce clean, properly formatted PDF output
-- **Undo/Redo state pattern** — managing a history stack with debouncing in JavaScript
-- **JSON data modeling** — structuring, validating, and safely importing structured data
-- **Drag and Drop API** — implementing intuitive item reordering
+- **localStorage management**
+- **API integration**
+- **DOM manipulation**
+- **Google Sheets + Apps Script** for feedback data
+- **JSON data structuring**
+and much more...
 
 AI wrote a significant portion of the code. But reading it, understanding it, debugging it, and connecting everything together — that's where the real learning happened.
 
