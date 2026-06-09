@@ -963,7 +963,7 @@ Return ONLY a raw JSON object — no markdown, no backticks, no text before or a
                 }
               </div>
               <h4 style="color:#3b82f6;margin-bottom:10px;">📈 Improvements to Make</h4>
-              <ul style="padding-left:20px;font-size:0.92rem;color:var(--text-main);line-height:1.7;">
+              <ul style="padding-left:20px;font-size:0.92rem;color:var(--text-main);line-height:1.2;">
                 ${analysis.improvements.map((i) => `<li style="margin-bottom:8px;">${escapeHTML(i)}</li>`).join("")}
               </ul>
             </div>
