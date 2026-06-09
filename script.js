@@ -439,7 +439,7 @@ let resumeData = normalizeResumeData(
 safeSetStoredApiKey(resumeData.settings.aiApiKey);
 const templateDefaults = {
   "two-column": { lineHeight: 1.4, pagePadding: 7 },
-  "single-column": { lineHeight: 1.7, pagePadding: 5 },
+  "single-column": { lineHeight: 1.2, pagePadding: 5 },
 };
 let templateSettings = {};
 templateSettings[resumeData.template] = {
