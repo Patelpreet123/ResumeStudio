@@ -7,6 +7,33 @@ const SAVE_TOAST_DELAY_MS = 1200;
 const SAVE_TOAST_VISIBLE_MS = 1600;
 let saveToastTimer = null;
 let saveToastHideTimer = null;
+function togglePdfTip(e) {
+  if (e) e.stopPropagation();
+  const popup = document.getElementById("pdf-tip-popup");
+  const isOpen = popup.classList.contains("show");
+  popup.classList.toggle("show");
+  if (!isOpen) {
+    setTimeout(() => {
+      document.addEventListener("click", closePdfTipOutside, {
+        once: true,
+      });
+    }, 10);
+  }
+}
+function closePdfTipOutside(e) {
+  const wrapper = document.querySelector(".pdf-info-wrapper");
+  if (wrapper && wrapper.contains(e.target)) {
+    setTimeout(() => {
+      document.addEventListener("click", closePdfTipOutside, {
+        once: true,
+      });
+    }, 10);
+    return;
+  }
+  const popup = document.getElementById("pdf-tip-popup");
+  if (popup) popup.classList.remove("show");
+}
+
 function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
@@ -384,7 +411,7 @@ const demoData = {
       column: "side",
       items: [
         {
-          text: "**Competitive Programming Profiles:** LeetCode: Solved 400+ (Rating: 1723) CodeChef: 2★ (Rating: 1494) CodeForces: Newbie (Rating: 1070)",
+          text: "**Competitive Programming Profiles:** LeetCode: Solved 450+ (Rating: 1723) CodeChef: 2★ (Rating: 1520) CodeForces: Newbie (Rating: 1070)",
         },
         {
           text: "Awards: Felicitated as a University Topper at the Dewang Mehta IT Awards at the AUDA auditorium, Ahmedabad (August 2025).",
@@ -398,7 +425,7 @@ const demoData = {
       column: "side",
       items: [
         {
-          title: "ODOO X GCET Hackathon 2025 (Offline Final Round)",
+          title: "ODOO X GCET Hackathon 2025 (24hrs Offline Final Round)",
           date: "DEC 2025 - FEB 2026",
           description:
             "Built RentalHub, a MERN-stack rental management system, Implemented role-based access control, overbooking prevention, and flexible rental pricing mechanisms.",
@@ -677,6 +704,7 @@ document.addEventListener("keydown", (e) => {
 });
 const GOOGLE_SHEET_WEB_APP_URL =
   "https://script.google.com/macros/s/AKfycbzDkqnNGLtyyRQ9mrHTv1HkX1Czl05nFWcuPqQCiV0l5rrtrQ7xlHX28gAFrPYA8pB2/exec";
+
 function sendResumeLeadAndPrint() {
   try {
     const lead = {
@@ -716,6 +744,7 @@ function sendResumeLeadAndPrint() {
     window.print();
   }
 }
+
 function saveData() {
   persistToStorage();
   applySettings();
@@ -1864,7 +1893,7 @@ const tourSteps = [
   {
     id: "tour-output",
     title: "🖨️ Save as PDF",
-    text: "When your resume looks ready, click <b>Print PDF</b> to save it as a PDF. For best results, use <b>Chrome</b> and set margins to <b>'None'</b> in the print dialog.",
+    text: "When your resume looks ready, click <b>Print PDF</b> to save it as a PDF. For best results, use <b>Chrome</b> and set margins to <b>'None'</b> in the print dialog. <b>Important:</b> Always choose <b>\"Save as PDF\"</b> as the Destination — not Microsoft Print to PDF — so all your links stay clickable.",
   },
 ];
 
