@@ -249,7 +249,7 @@ Since localStorage is browser and device specific, Export & Import lets you take
 
 ## AI Features
 
-AI features use the **Groq API** running **Llama 3.3 70B** — one of the fastest and most capable open models available. It is **completely free** and does not require a credit card.
+AI features use the **grok API** running **Llama 3.3 70B** — one of the fastest and most capable open models available. It is **completely free** and does not require a credit card.
 
 > All AI buttons have a **5-second cooldown** after each use to prevent accidental repeated calls.
 
@@ -316,11 +316,11 @@ No first-person pronouns. No filler words. No invented details.
 
 ### How to Get a Free API Key
 
-1. Go to [console.groq.com](https://console.groq.com)
+1. Go to [console.grok.com](https://console.grok.com)
 2. Sign in with Google
 3. Click **API Keys** → **Create API Key**
 4. Copy the key (starts with `gsk_...`)
-5. Open ResumeStudio → click **⚙️ Settings** → paste it in the **Groq API Key** field
+5. Open ResumeStudio → click **⚙️ Settings** → paste it in the **grok API Key** field
 
 That's it. The key is saved in your localStorage and persists across sessions. It is never included in JSON exports.
 
@@ -360,7 +360,7 @@ You can reopen the Start Menu anytime using the **🪄 Menu** button in the top 
 | CSS3 | Styling, themes, CSS variables, print media queries |
 | Vanilla JavaScript | All logic — no frameworks or libraries |
 | localStorage API | Auto-saving all resume data in the browser |
-| Groq API (Llama 3.3 70B) | AI features — ATS scoring, enhance, summary generation |
+| grok API (Llama 3.3 70B) | AI features — ATS scoring, enhance, summary generation |
 | Google Apps Script | Collecting user feedback via a serverless Google Sheet web app |
 | CSS @media print | Clean A4 PDF output directly from the browser |
 | Drag and Drop API | Reordering items within sections |
