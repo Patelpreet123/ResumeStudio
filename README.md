@@ -316,7 +316,7 @@ No first-person pronouns. No filler words. No invented details.
 
 ### How to Get a Free API Key
 
-1. Go to [console.grok.com](https://console.grok.com)
+1. Go to [console.groq.com](https://console.groq.com)
 2. Sign in with Google
 3. Click **API Keys** → **Create API Key**
 4. Copy the key (starts with `gsk_...`)
