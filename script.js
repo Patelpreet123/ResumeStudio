@@ -846,7 +846,7 @@ async function callAI(systemPrompt, userPrompt, jsonMode = false) {
     .replace(/[^\x20-\x7E]/g, "")
     .trim();
   const url = "https://api.groq.com/openai/v1/chat/completions";
-  const model = "llama-3.3-70b-versatile";
+  const model = "openai/gpt-oss-120b";
   const body = {
     model,
     messages: [
@@ -973,7 +973,7 @@ Return ONLY a raw JSON object — no markdown, no backticks, no text before or a
         : analysis.score > 59
           ? "#f59e0b"
           : "#ef4444";
-    const providerLabel = "Groq · Llama 3.3 70B";
+    const providerLabel = "Groq · GPT-OSS 120B";
     resDiv.innerHTML = `
             <div style="font-size:3.5rem;font-weight:bold;color:${scoreColor};margin-top:15px;">${analysis.score}<span style="font-size:1.5rem;color:var(--text-muted)">/100</span></div>
             <p style="margin-bottom:20px;font-style:italic;font-size:1rem;color:var(--text-main);">"${escapeHTML(analysis.feedback)}"</p>
