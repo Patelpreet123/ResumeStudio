@@ -1,96 +1,213 @@
 # ResumeStudio 🎯
 ### *Where Great Resumes Begin*
 
-A free, browser-based resume builder made entirely with **HTML, CSS & JavaScript** — no frameworks, no backend, no login required. Everything runs on your local machine. Your data never leaves your device.
+A browser-based resume builder built with **HTML, CSS, and Vanilla JavaScript**. ResumeStudio combines a structured resume editor, customizable layouts, local persistence, JSON backup/restore, browser-based PDF printing, and AI-powered resume assistance in a single client-side application.
 
-> 🔗 **Live Demo** — https://patelpreet123.github.io/ResumeStudio/
+> 🔗 **Live Demo** — https://patelpreet123.github.io/ResumeStudio/  
+> 💻 **GitHub** — https://github.com/Patelpreet123/ResumeStudio
 
 ---
 
 ## 📌 Table of Contents
 
 - [About the Project](#about-the-project)
-- [Who Is It For](#who-is-it-for)
+- [Why ResumeStudio](#why-resumestudio)
+- [Architecture](#architecture)
+- [Core Data Model](#core-data-model)
 - [Features](#features)
-  - [Layouts](#layouts)
-  - [Sections](#sections)
+  - [Resume Layouts](#resume-layouts)
+  - [Dynamic Sections](#dynamic-sections)
   - [Profile Links](#profile-links)
   - [Custom Sections](#custom-sections)
   - [Inline Formatting](#inline-formatting)
-  - [Settings Panel](#settings-panel)
+  - [Settings & Themes](#settings--themes)
   - [Undo / Redo](#undo--redo)
-  - [Drag to Reorder](#drag-to-reorder)
-  - [Page Overflow Warning](#page-overflow-warning)
+  - [Drag-and-Drop Reordering](#drag-and-drop-reordering)
+  - [A4 Page Overflow Detection](#a4-page-overflow-detection)
   - [Print to PDF](#print-to-pdf)
-- [Data Storage — localStorage](#data-storage--localstorage)
-- [Export & Import](#export--import)
+  - [JSON Export & Import](#json-export--import)
 - [AI Features](#ai-features)
-  - [ATS Score](#ats-score)
+  - [AI-Powered ATS Evaluation](#ai-powered-ats-evaluation)
   - [AI Enhance](#ai-enhance)
   - [AI Generate Summary](#ai-generate-summary)
-  - [How to Get a Free API Key](#how-to-get-a-free-api-key)
+  - [AI Request Flow](#ai-request-flow)
+  - [AI Setup](#ai-setup)
+- [Data Persistence](#data-persistence)
+- [Technical Highlights](#technical-highlights)
+- [Security & Privacy](#security--privacy)
+- [Known Limitations](#known-limitations)
+- [Getting Started](#getting-started)
 - [Demo Resume](#demo-resume)
 - [Interactive Tutorial](#interactive-tutorial)
 - [Tech Stack](#tech-stack)
 - [What I Learned](#what-i-learned)
 - [Feedback](#feedback)
+- [Author](#author)
 
 ---
 
 ## About the Project
 
-ResumeStudio is a fully client-side resume builder. There is no server, no database, and no third-party service handling your data. Everything is built using plain HTML, CSS, and JavaScript — and the entire resume data is stored in your browser's localStorage.
+ResumeStudio is a **single-page, client-side resume editor** designed around a structured `resumeData` state object.
 
-It was built as a learning side project with the help of AI. Every part of the code was read, understood, and debugged manually — and the process taught a lot of real, practical web development concepts.
+Instead of storing the rendered resume as raw HTML, the application stores the underlying resume data—personal information, links, settings, section definitions, and section items—and regenerates the editor and preview from that state.
 
----
-
-## Who Is It For?
-
-ResumeStudio is **specifically designed and tweaked for tech students and CS undergrads** — especially those in the Indian IT market applying for SDE internships and campus placements at companies like Zoho, Freshworks, Flipkart, PhonePe, and Razorpay.
-
-Unlike generic resume builders, everything here — from the default sections and profile links to the AI scoring rubric — is built keeping a **Computer Science student's resume** in mind.
+The project was built as a practical exercise in browser-based application development, with a focus on state management, DOM rendering, persistence, history management, document layout, API integration, and user experience.
 
 ---
 
-## Features
+## Why ResumeStudio?
 
-### Layouts
+ResumeStudio is designed primarily for **students and early-career developers** creating resumes for software engineering internships and campus placements.
 
-Two resume layout options are available:
+The project focuses on common resume-building problems:
+
+- Managing multiple resume sections without editing HTML manually
+- Reordering sections and individual items quickly
+- Keeping resume data available after page reloads
+- Moving resume data between browsers/devices through JSON backups
+- Checking whether the resume fits within an A4 page
+- Producing a clean printable resume
+- Using AI to improve bullets, generate summaries, and perform ATS-style evaluation
+
+---
+
+## Architecture
+
+ResumeStudio follows a simple state-driven client-side architecture:
+
+```mermaid
+flowchart TD
+    A[User Interaction] --> B[Editor UI]
+    B --> C[resumeData State]
+
+    C --> D[localStorage Persistence]
+    C --> E[Preview Renderer]
+    C --> F[Navigation / Section Controls]
+    C --> G[History Manager]
+
+    E --> H[A4 Measurement]
+    H --> I[Page Overflow Indicators]
+    E --> J[Browser Print / PDF]
+
+    C --> K[AI Features]
+    K --> L[Groq API]
+    L --> M[ATS / Enhance / Summary Results]
+    M --> C
+
+    N[JSON Import] --> O[Validation + Normalization]
+    O --> C
+
+    C --> P[JSON Export]
+```
+
+### Main application flow
+
+```text
+User edits resume
+       ↓
+updateState(...)
+       ↓
+resumeData changes
+       ↓
+saveData()
+       ├── persist to localStorage
+       ├── apply settings
+       ├── render preview
+       ├── render navigation
+       └── record history
+```
+
+This keeps the application centered around one structured source of truth rather than maintaining separate editor and preview data.
+
+---
+
+## Core Data Model
+
+The entire resume is represented as a structured JavaScript object:
+
+```text
+resumeData
+├── template
+├── isDemo
+├── settings
+│   ├── accentColor
+│   ├── lineHeight
+│   ├── pagePadding
+│   ├── font
+│   └── aiApiKey
+├── personal
+│   ├── name
+│   ├── role
+│   ├── email
+│   ├── phone
+│   ├── location
+│   └── links[]
+└── sections[]
+    ├── text
+    ├── education
+    ├── experience
+    ├── skills
+    ├── project
+    └── simple
+```
+
+Each section has its own data structure while sharing common concepts such as:
+
+- `id`
+- `title`
+- `type`
+- `column`
+- `items` for list-based sections
+
+This makes the editor and renderer data-driven and allows custom sections to be created without hardcoding a new page for every section type.
+
+---
+
+# Features
+
+## Resume Layouts
+
+Two resume layouts are available:
 
 | Layout | Description |
 |---|---|
-| **Two Column** | Main column (60%) for core content + Side column (40%) for supporting info |
-| **Single Column** | All sections stacked top to bottom in one column |
+| **Two Column** | Main column for core content + side column for supporting information |
+| **Single Column** | All sections arranged vertically |
 
-You can switch between layouts at any time from the top bar. When you switch, spacing and padding auto-adjust for the new format.
+Switching layouts is supported directly from the application. Layout-specific spacing and padding defaults are automatically applied.
 
 ---
 
-### Sections
+## Dynamic Sections
 
-The following sections come preloaded and ready to fill:
+ResumeStudio includes the following default sections:
 
 | Section | Type |
 |---|---|
 | Profile Summary | Paragraph text |
-| Education | Degree, School, Dates, Grade |
-| Experience | Role, Company, Date, Description |
-| Technical Skills | Skill categories with tags |
-| Projects | Name, Date, Description, Links |
+| Education | Degree, institution, dates, grade |
+| Experience | Role, company, date, description |
+| Technical Skills | Skill categories with lists |
+| Projects | Name, date, description, Live/GitHub links |
 | Field of Interest | Bullet list |
 | Achievements | Bullet list |
-| Hackathons | Name, Date, Description, Links |
+| Hackathons | Name, date, description, links |
 | Hobbies | Paragraph text |
 
-Each section can be renamed, reordered, moved between columns, or deleted.
+Each section can be:
+
+- Renamed
+- Reordered
+- Moved between columns
+- Deleted
+- Populated with multiple items where applicable
 
 ---
 
-### Profile Links
+## Profile Links
 
-Pre-filled platform name slots included:
+Predefined profile slots are available for:
 
 - LinkedIn
 - GitHub
@@ -100,108 +217,183 @@ Pre-filled platform name slots included:
 - HackerRank
 - Codolio
 
-You can reorder them using the up/down arrows, delete any you don't need, or add completely new ones. Only links with a URL filled in will appear on the resume.
+Links can be reordered, removed, or extended with custom platforms. Only links with a URL are rendered on the resume.
+
+URLs are validated before being rendered as links.
 
 ---
 
-### Custom Sections
+## Custom Sections
 
-Click **➕ Add Section** to create a new section from scratch. You get to choose:
+The **➕ Add Section** feature allows users to create their own sections.
 
-**Section Title** — anything you want (e.g. Certifications, Open Source, Publications)
+Each custom section has:
 
-**Format Type** — choose from 6 types:
+### Section Title
+Use any title such as:
+
+- Certifications
+- Open Source
+- Publications
+- Coursework
+- Volunteer Experience
+
+### Format Type
 
 | Type | Best For |
 |---|---|
-| Projects / Hackathons | Name, Date, Description, Live + GitHub links |
-| Experience | Role, Company, Date, Description |
-| Technical Skills | Skill categories with tag-style inputs |
-| Education | Degree, School, Dates, Grade type |
-| Bullet List | Interests, Achievements, simple items |
-| Paragraph | Free-form text block |
+| Projects / Hackathons | Name, date, description, links |
+| Experience | Role, company, date, description |
+| Technical Skills | Skill categories + skill lists |
+| Education | Degree, institution, dates, grade |
+| Bullet List | Achievements, interests, activities |
+| Paragraph | Free-form text |
 
-**Column** — Main (60%) or Side (40%) — only for Two Column layout.
+### Column
+
+In Two Column mode, a custom section can be assigned to:
+
+- Main column
+- Side column
 
 ---
 
-### Inline Formatting
+## Inline Formatting
 
-Use these shortcuts inside any text field — they render live on the resume:
+Text fields support lightweight inline formatting without requiring a rich text editor:
 
-| Shortcut | Output |
+| Syntax | Result |
 |---|---|
 | `**text**` | **Bold** |
 | `*text*` | *Italic* |
-| `__text__` | Underline |
-| `++text++` | Larger emphasis text |
+| `__text__` | <u>Underline</u> |
+| `++text++` | Larger emphasis |
 
-No rich text editor needed. Just type naturally.
-
----
-
-### Settings Panel
-
-Click **⚙️ Settings** to access full customisation:
-
-**Accent Color**
-- Full color picker — choose any color
-- 10 quick color swatches (Black, Navy, Maroon, Purple, Teal, Amber, Royal Blue, Forest Green, Violet, Crimson)
-
-**Theme Presets** — one click sets both color and font together:
-- Minimal Black (Calibri)
-- Navy Pro (Arial)
-- Warm Maroon (Georgia)
-- Royal Purple (Garamond)
-
-**Font Family** — choose from 6 options:
-- Calibri *(default, clean)*
-- Arial *(ATS-safe)*
-- Georgia *(classic serif)*
-- Garamond *(elegant)*
-- Times New Roman *(traditional)*
-- Palatino *(literary)*
-
-**Line Spacing** — slider from 1.0 to 2.0
-
-**Page Padding** — slider from 5mm to 30mm
-
-**Section Order & Columns**
-- Move any section up or down within its column
-- Move any section from Main column to Side column and vice versa
-- In Single Column mode, reorder all sections top to bottom
+Text is escaped before formatting is applied, preventing raw user HTML from being directly inserted into the generated resume.
 
 ---
 
-### Undo / Redo
+## Settings & Themes
 
-Full undo/redo history with up to **50 saved states**.
+The settings panel provides resume-level customization.
 
-- Click **↩ Undo** or press `Ctrl+Z`
-- Click **↪ Redo** or press `Ctrl+Y`
+### Accent Color
 
-History is recorded with a short debounce — it doesn't create a new state on every single keystroke, only after you pause typing.
+A full color picker plus predefined color swatches are available.
+
+### Theme Presets
+
+- Minimal Black — Calibri
+- Navy Pro — Arial
+- Warm Maroon — Georgia
+- Royal Purple — Garamond
+
+### Font Family
+
+Six font choices are available:
+
+- Calibri
+- Arial
+- Georgia
+- Garamond
+- Times New Roman
+- Palatino
+
+### Layout Controls
+
+- Line spacing: **1.0 → 2.0**
+- Page padding: **5mm → 30mm**
+- Section ordering
+- Section column placement
+
+Settings are applied directly to the generated resume preview.
 
 ---
 
-### Drag to Reorder
+## Undo / Redo
 
-Within any section (Projects, Education, Experience, etc.) — each item has a **☰ Drag** handle. Hold and drag it to reorder items within that section. Works for all section types.
+ResumeStudio includes state-based undo/redo with a maximum of **50 saved states**.
+
+### Controls
+
+- `↩ Undo`
+- `↪ Redo`
+- `Ctrl + Z`
+- `Ctrl + Y`
+- `Ctrl + Shift + Z`
+
+### Implementation
+
+Instead of storing individual UI operations, the application stores serialized snapshots of `resumeData`.
+
+```text
+resumeData
+   ↓
+JSON.stringify(...)
+   ↓
+historyStack[]
+```
+
+Typing is **debounced by 700ms**, so every individual keystroke does not create a separate history state.
+
+This keeps the implementation simple while still providing useful editing history.
 
 ---
 
-### Page Overflow Warning
+## Drag-and-Drop Reordering
 
-If your resume content exceeds one A4 page:
+Items inside sections can be reordered using a drag handle.
 
-- A **red pulsing warning banner** appears at the bottom right
-- A **red dashed line** is drawn on the resume preview exactly where the page break would fall, with a label showing "Page 2 starts here ✂"
+Supported examples include:
 
-The measurement uses the browser's own CSS mm-to-pixel engine — not hardcoded math — so it's accurate across all screen sizes and zoom levels.
+- Projects
+- Education entries
+- Experience entries
+- Hackathons
+- Skills
+- Bullet-list sections
+
+Section ordering itself is handled separately through the section navigation controls.
 
 ---
 
-### Print to PDF
+## A4 Page Overflow Detection
+
+ResumeStudio checks whether the generated resume exceeds a single A4 page.
+
+Instead of relying on a hardcoded pixel conversion, the application creates a hidden DOM ruler with:
+
+```text
+210mm × 297mm
+```
+
+It then measures the rendered resume content and compares its height with the measured A4 height.
+
+When the content exceeds one page:
+
+- A page overflow indicator appears
+- Dashed page-break lines are rendered
+- Each break is labelled with the next page number
+
+Example:
+
+```text
+┌───────────────────────────────┐
+│                               │
+│        Resume Content         │
+│                               │
+├ - - - Page 2 starts here ✂ - -┤
+│                               │
+│        Additional Content     │
+│                               │
+└───────────────────────────────┘
+```
+
+This is intended to help users identify pagination problems before printing.
+
+---
+
+## Print to PDF
 
 Click **Print PDF** when your resume is ready.
 
@@ -211,192 +403,509 @@ The editor panel, tutorial overlays, and page break lines are all hidden during 
 
 ---
 
-## Data Storage — localStorage
+## JSON Export & Import
 
-ResumeStudio does not use any server or database.
+ResumeStudio supports portable JSON backups.
 
-Your browser has a built-in storage area called **localStorage** — think of it as a sticky note your browser keeps for a specific website. Every time you make a change, your resume is saved there instantly — no internet connection needed, no account, no server involved.
+### Export
 
-**Close the tab, shut your laptop, come back tomorrow** — everything is exactly where you left it.
+Click **💾 Export** to download the current resume state as a `.json` file.
 
-Your data stays completely on your device and is never sent anywhere.
+The exported data includes:
 
-> ⚠️ **Note:** localStorage is tied to one specific browser on one specific device. If you clear your browser data or switch devices, you will lose your progress — which is why Export & Import exists.
+- Resume settings
+- Personal information
+- Profile links
+- Sections
+- Section contents
+- Layout configuration
 
----
+The API key is removed from exported JSON data.
 
-## Export & Import
+### Import
 
-Since localStorage is browser and device specific, Export & Import lets you take your resume anywhere.
+Click **📂 Import** and select a previously exported JSON file.
 
-**Export**
-- Click **💾 Export** in the top bar
-- Your resume downloads as a `.json` file on your computer
-- Your API key is automatically removed from the export for security
+The imported data is:
 
-**Import**
-- Click **📂 Import** and select a previously exported `.json` file
-- Your resume loads back instantly, exactly as it was — ready to edit
-- The file is validated before loading — invalid files are rejected with a clear error message
+1. Parsed
+2. Structurally validated
+3. Normalized against the application's default data model
+4. Loaded into `resumeData`
+5. Persisted to local storage
 
-**Use cases:**
-- Switch between devices or browsers
-- Keep multiple versions of your resume (export before making big changes)
-- Share your resume data with someone else to load in their ResumeStudio
-- Rework on the same resume later — just import the json file back and continue right where you left off
+### Why JSON export matters
 
----
-
-## AI Features
-
-AI features use the **grok API** running **Llama 3.3 70B** — one of the fastest and most capable open models available. It is **completely free** and does not require a credit card.
-
-> All AI buttons have a **5-second cooldown** after each use to prevent accidental repeated calls.
+- Backup a resume before major edits
+- Move a resume between browsers/devices
+- Keep multiple resume versions
+- Share a structured resume file with another ResumeStudio instance
 
 ---
 
-### ATS Score
+# AI Features
 
-Click **🎯 ATS Check** to get your resume analyzed.
+ResumeStudio integrates AI through the **Groq API** using:
 
-You can optionally paste a **Job Description** — or leave it blank for a general SDE internship review calibrated for the Indian IT market.
+**Model:** `openai/gpt-oss-120b`
 
-**What you get:**
-- A score out of 100
-- One-line summary of your strongest asset and biggest gap
-- Missing keywords and skills (only genuinely absent ones — not things already in your resume)
-- Specific, actionable improvement suggestions
+AI requests are made directly from the browser using the Fetch API.
 
-**Scoring Rubric (Indian B.Tech SDE focus):**
-
-| Category | Points |
-|---|---|
-| DSA & Competitive Programming (LeetCode, CodeChef, CodeForces) | 25 |
-| Project Quality (real-world features, deployment, APIs) | 30 |
-| Bullet Point Quality (XYZ impact format) | 20 |
-| Tech Stack relevance for Indian market | 15 |
-| Resume Completeness (all sections + working links) | 10 |
-
-> Score calibration: 70–80 = strong shortlist candidate. 80–90 = excellent. 90+ = exceptional.
+All AI actions include a **5-second cooldown** to reduce accidental repeated requests.
 
 ---
 
-### AI Enhance
+## AI-Powered ATS Evaluation
 
-Every description field (Projects, Experience, Education, etc.) has an **✨ AI Enhance** button.
+The **🎯 ATS Check** feature evaluates the resume using an LLM-based recruiter rubric.
 
-It rewrites your existing text into strong, ATS-optimised bullet points using the **XYZ Impact Format**:
+Users can optionally provide a Job Description. Without one, ResumeStudio uses a general SDE internship / campus-placement evaluation context.
 
-> *[Action Verb] [what you built] using [specific technology], [resulting in / which] [measurable outcome]*
+### Output
 
-**Rules enforced by the AI:**
-- Starts every bullet with a strong action verb (Built, Developed, Implemented, Designed, etc.)
-- Keeps all technology names exactly as given
-- No buzzwords (no "leveraged", "synergised", "spearheaded")
-- Keeps numbers and metrics if present in the original
-- Each bullet is 1–2 lines maximum
+The evaluation returns:
 
----
+- Score out of 100
+- One-sentence strongest asset
+- One-sentence most important gap
+- Missing keywords / skills
+- Specific improvement suggestions
 
-### AI Generate Summary
+### Evaluation Rubric
 
-On the **Profile Summary** section, click **✨ Generate** to auto-write your summary.
+| Category | Weight |
+|---|---:|
+| DSA & Competitive Programming | 25 |
+| Project Quality | 30 |
+| Bullet Point Quality | 20 |
+| Tech Stack Relevance | 15 |
+| Resume Completeness | 10 |
+| **Total** | **100** |
 
-The AI reads your entire resume — education, skills, projects, achievements, competitive programming stats — and writes a tight 2–3 sentence summary following this structure:
+The evaluator is instructed to check the complete resume before marking a keyword as missing.
 
-- **Sentence 1** — Identity: year, institution, CGPA (only if strong)
-- **Sentence 2** — Technical depth: strongest tech stack + most impactful project
-- **Sentence 3** — Differentiator: CP stats, hackathon, or award (only if genuinely strong)
+### Important implementation detail
 
-No first-person pronouns. No filler words. No invented details.
+The ATS score is **LLM-generated**, not a deterministic local ATS parser.
 
-> **Tip:** Fill in your other sections first, then generate the summary — the more data available, the better the output.
+The flow is:
 
----
-
-### How to Get a Free API Key
-
-1. Go to [console.groq.com](https://console.groq.com)
-2. Sign in with Google
-3. Click **API Keys** → **Create API Key**
-4. Copy the key (starts with `gsk_...`)
-5. Open ResumeStudio → click **⚙️ Settings** → paste it in the **grok API Key** field
-
-That's it. The key is saved in your localStorage and persists across sessions. It is never included in JSON exports.
-
----
-
-## Demo Resume
-
-Open the app → click **🪄 Menu** → **Load Demo Resume**.
-
-This loads a real, filled resume — not a fake placeholder. It's the developer's own actual resume built entirely using ResumeStudio, with real projects, real links, and real data.
-
-You can explore it, edit it, try out the AI features on it, and then start fresh with your own using **New Template** whenever you're ready.
+```text
+Structured Resume Data
+        ↓
+Resume Text Representation
+        ↓
+System Prompt + Rubric + Job Description
+        ↓
+Groq API
+        ↓
+Structured JSON Response
+        ↓
+ATS Results UI
+```
 
 ---
 
-## Interactive Tutorial
+## AI Enhance
 
-First-time users see a **Start Menu** with three options:
+The **✨ AI Enhance** action rewrites existing resume descriptions into stronger bullet points.
+
+The prompt enforces:
+
+- Strong action verbs
+- XYZ-style structure
+- Preservation of technology names
+- Preservation of existing metrics
+- Direct language
+- No unnecessary buzzwords
+- 1–2 lines per bullet
+
+Example target structure:
+
+```text
+[Action Verb] [what was built/done] using [technology],
+[resulting in / which / to] [impact]
+```
+
+The generated result is written back into the corresponding resume field.
+
+---
+
+## AI Generate Summary
+
+The **✨ Generate** action on Profile Summary builds context from the rest of the resume and generates a 2–3 sentence summary.
+
+The context can include:
+
+- Candidate identity
+- Target role
+- Profile links
+- Education
+- Skills
+- Projects
+- Experience
+- Achievements
+- Hackathons
+- Other populated sections
+
+The generation prompt is designed to:
+
+- Use only information present in the resume
+- Avoid invented claims
+- Avoid first-person pronouns
+- Prioritize technical depth
+- Mention strong differentiators only when supported by the data
+- Keep the summary concise
+
+---
+
+## AI Request Flow
+
+All AI features share a common API function:
+
+```text
+AI Feature
+    ↓
+Prepare system prompt
+    ↓
+Prepare user prompt
+    ↓
+callAI(...)
+    ↓
+Groq Chat Completions API
+    ↓
+Parse returned text / JSON
+    ↓
+Update resume state or render result
+```
+
+For ATS evaluation, JSON response mode is requested so the client can parse the score and recommendations directly.
+
+---
+
+## AI Setup
+
+To enable AI features:
+
+1. Create a Groq API key from the Groq Console:
+   https://console.groq.com/
+2. Open ResumeStudio
+3. Go to **⚙️ Settings**
+4. Enter the API key
+5. Use the ATS, Enhance, or Generate features
+
+The key is stored locally in the browser and is removed from JSON exports.
+
+> API availability, quotas, and pricing are controlled by Groq and may change over time.
+
+---
+
+# Data Persistence
+
+ResumeStudio uses the browser's **Web Storage API (`localStorage`)** for automatic persistence.
+
+The main resume state is stored under an application storage key, while the AI API key is kept separately.
+
+### Persistence Flow
+
+```text
+User changes resume
+       ↓
+updateState(...)
+       ↓
+saveData()
+       ↓
+persistToStorage()
+       ↓
+localStorage.setItem(...)
+```
+
+The application also contains normalization and migration logic to support older stored data formats.
+
+### Important limitation
+
+`localStorage` is specific to the browser and device being used.
+
+Clearing browser storage or switching devices does not automatically transfer the resume. JSON export/import is provided for portability.
+
+---
+
+# Technical Highlights
+
+## 1. Centralized State Management
+
+A structured `resumeData` object acts as the main source of truth for:
+
+- Editor fields
+- Preview rendering
+- Settings
+- Persistence
+- AI context
+- Undo/redo
+
+This avoids maintaining independent data models for each part of the application.
+
+---
+
+## 2. Data Normalization & Migration
+
+Imported and stored data passes through a normalization layer that:
+
+- Merges data with the default schema
+- Validates major object structures
+- Normalizes template/settings values
+- Restores the stored API key when appropriate
+- Removes legacy AI configuration fields
+- Ensures the Profile Summary section exists
+
+The project also includes migration logic for older localStorage keys.
+
+---
+
+## 3. Generic State Updates
+
+Editor inputs use state paths such as:
+
+```text
+personal.name
+personal.links.2.url
+sections.3.items.1.description
+settings.pagePadding
+```
+
+A generic state-update function resolves the path, updates the corresponding value, and triggers the normal save/render flow.
+
+This allows many editor controls to share the same state-update mechanism.
+
+---
+
+## 4. Dynamic Rendering
+
+The application generates editor controls and resume preview content from `resumeData`.
+
+The preview renderer supports different section types and builds the corresponding HTML based on their data model.
+
+This means the application can render a new resume state without manually editing the preview HTML.
+
+---
+
+## 5. Snapshot-Based History
+
+Undo/redo uses serialized state snapshots rather than tracking individual mutations.
+
+```text
+resumeData
+   ↓
+JSON.stringify
+   ↓
+historyStack
+```
+
+Maximum history depth:
+
+```text
+50 states
+```
+
+History recording debounce:
+
+```text
+700ms
+```
+
+---
+
+## 6. Browser-Native A4 Measurement
+
+A hidden DOM element sized in CSS millimetres is used to determine the browser's actual A4 pixel dimensions.
+
+A second hidden probe renders the resume at the measured A4 width and calculates its actual content height.
+
+This allows page-break indicators to adapt to browser rendering rather than depending on a fixed px/mm conversion.
+
+---
+
+## 7. Lightweight Text Formatting
+
+Resume text supports a small custom formatting syntax.
+
+User input is escaped first, then the supported formatting tokens are converted into HTML.
+
+This provides basic rich-text-like functionality without introducing a rich text editor dependency.
+
+---
+
+## 8. URL Validation
+
+ResumeStudio only renders profile/project links when they use supported schemes such as:
+
+```text
+https://
+mailto:
+tel:
+```
+
+This keeps arbitrary user-provided strings from being directly inserted as hyperlink targets.
+
+---
+
+## 9. API Integration
+
+The project uses the browser Fetch API with `async/await` for external requests.
+
+The shared AI request function handles:
+
+- Authorization headers
+- JSON request bodies
+- Optional structured JSON response mode
+- HTTP error handling
+- Response parsing
+
+---
+
+# Security & Privacy
+
+- Resume editing and persistence are primarily handled in the browser.
+- Resume state is stored in `localStorage`.
+- The AI API key is stored locally in the browser.
+- The API key is removed from exported JSON files.
+- AI-powered features send the relevant resume context to the configured Groq API.
+- User feedback is handled through the application's configured Google Apps Script integration.
+
+> `localStorage` is not a cloud backup system. Export important resume versions as JSON if you need durable backups.
+
+---
+
+# Known Limitations
+
+ResumeStudio intentionally keeps its architecture simple. As a result, it has several limitations:
+
+- No user accounts or cloud synchronization
+- No multi-device automatic state syncing
+- AI evaluation depends on an external LLM and is therefore not fully deterministic
+- AI API credentials are entered and used client-side rather than protected by a server-side proxy
+- PDF output depends on the browser's print engine
+- Resume pagination is measured and visualized in the browser, while final page breaking is handled by browser printing
+- Import validation checks the main data structure rather than implementing a full schema validation system
+
+These trade-offs keep the project lightweight and deployable as a static application.
+
+---
+
+# Getting Started
+
+## Run Locally
+
+ResumeStudio does not require a build step.
+
+### Option 1 — Open directly
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Patelpreet123/ResumeStudio.git
+cd ResumeStudio
+```
+
+Then open `index.html` in a modern browser.
+
+### Option 2 — Use a local development server
+
+Using VS Code Live Server or another static HTTP server is recommended for a more consistent browser development environment.
+
+### Project Structure
+
+```text
+ResumeStudio/
+├── index.html
+├── script.js
+├── style.css
+└── README.md
+```
+
+---
+
+# Demo Resume
+
+Open the application and select:
+
+**🪄 Menu → Load Demo Resume**
+
+The demo loads a realistic, fully populated resume so users can explore the editor, preview, layout switching, reordering, settings, and AI functionality without creating a resume from scratch.
+
+---
+
+# Interactive Tutorial
+
+First-time users are shown a Start Menu with:
 
 | Option | Description |
 |---|---|
-| 🆕 New Template | Start with a clean blank resume |
-| 🎓 Interactive Tutorial | A step-by-step guided spotlight tour of all key features |
-| 📄 Load Demo Resume | See a fully filled real resume example |
+| 🆕 New Template | Start with an empty resume |
+| 🎓 Interactive Tutorial | Guided walkthrough of the main features |
+| 📄 Load Demo Resume | Explore the application with a populated resume |
 
-The tutorial uses a **spotlight effect** — it dims the entire screen and highlights one feature at a time with an explanation tooltip. You can exit at any point.
+The tutorial uses a spotlight-style overlay to highlight important controls one step at a time.
 
-You can reopen the Start Menu anytime using the **🪄 Menu** button in the top bar.
+The Start Menu can be reopened from the **🪄 Menu** button.
 
 ---
 
-## Tech Stack
+# Tech Stack
 
-| Technology | Usage |
+| Technology | Purpose |
 |---|---|
-| HTML5 | Structure and layout |
-| CSS3 | Styling, themes, CSS variables, print media queries |
-| Vanilla JavaScript | All logic — no frameworks or libraries |
-| localStorage API | Auto-saving all resume data in the browser |
-| grok API (Llama 3.3 70B) | AI features — ATS scoring, enhance, summary generation |
-| Google Apps Script | Collecting user feedback via a serverless Google Sheet web app |
-| CSS @media print | Clean A4 PDF output directly from the browser |
-| Drag and Drop API | Reordering items within sections |
-| Fetch API + async/await | All API calls with proper error handling |
+| **HTML5** | Application structure |
+| **CSS3** | Styling, themes, layout, responsive behavior, print styles |
+| **Vanilla JavaScript** | State management, rendering, interactions, and application logic |
+| **Web Storage API** | Local resume persistence |
+| **Drag and Drop API** | Item reordering |
+| **Fetch API + async/await** | External API communication |
+| **Groq API** | ATS evaluation, bullet enhancement, summary generation |
+| **GPT-OSS 120B** | Current AI model used through Groq |
+| **Google Apps Script** | Feedback integration |
+| **CSS `@media print` + `window.print()`** | Browser-based A4 PDF output |
 
 ---
 
-## What I Learned
+# What I Learned
 
-This project was built with the help of AI as a learning exercise. Here's what the process taught:
+Building ResumeStudio provided practical experience with:
 
-- **localStorage management**
-- **API integration**
-- **DOM manipulation**
-- **Google Sheets + Apps Script** for feedback data
-- **JSON data structuring**
-and much more...
-
-AI wrote a significant portion of the code. But reading it, understanding it, debugging it, and connecting everything together — that's where the real learning happened.
-
----
-
-## Feedback
-
-If you find a bug, a glitch, or have an idea for a new feature — please drop your feedback directly in the app.
-
-There's a **💬 Feedback** button built right inside ResumeStudio. It takes less than a minute and goes directly to the developer.
+- Client-side state management
+- DOM manipulation and dynamic rendering
+- Event handling and reusable UI logic
+- Browser storage and persistence
+- JSON serialization/deserialization
+- Undo/redo design using state snapshots
+- Drag-and-drop interactions
+- Browser print APIs and document layout
+- A4 page measurement using CSS units and DOM geometry
+- API integration with `fetch` and `async/await`
+- Structured LLM prompts and JSON responses
+- Input escaping and URL validation
+- Google Apps Script integration
+- Designing a feature-rich static web application without a framework
 
 ---
 
-## Author
+# Feedback
+
+Found a bug, glitch, or have an improvement idea?
+
+Use the built-in **💬 Feedback** button inside ResumeStudio.
+
+Feedback is collected through the application's configured Google Apps Script integration.
+
+---
+
+# Author
 
 **Preet Patel**  
-3rd Year B.Tech CSE — Parul University  
+3rd Year B.Tech CSE — Parul University
+
 [LinkedIn](https://www.linkedin.com/in/0xpreetpatel/) • [GitHub](https://github.com/Patelpreet123) • [LeetCode](https://leetcode.com/u/Preet_Patel_17/)
 
 ---
 
-*Built with HTML, CSS & JavaScript — and a lot of learning along the way.*
+*Built with HTML, CSS & JavaScript — with a focus on practical frontend engineering and learning by building.*
